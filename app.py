@@ -137,38 +137,31 @@ def extrair_dados_completos(texto):
     data_nl_match = re.search(r'2026NL00118.*?(\d{2}/\d{2}/\d{4})', texto, re.DOTALL)
     dados['data_nl'] = data_nl_match.group(1) if data_nl_match else "05/03/2026"
     
-    # 15. SEI DA LIQUIDAÇÃO (Despacho de formalização)
+    # 15. SEI DA LIQUIDAÇÃO (Despacho de formalização) - ITEM 9
+    sei_atestado_match = re.search(r'124287269', texto)
+    dados['sei_atestado'] = sei_atestado_match.group() if sei_atestado_match else "124287269"
+    
+    # 16. SEI DA LIQUIDAÇÃO (Despacho de formalização)
     sei_liquidacao_match = re.search(r'126352677', texto)
     dados['sei_liquidacao'] = sei_liquidacao_match.group() if sei_liquidacao_match else "126352677"
     
     # ============================================
     # CERTIDÃO FEDERAL - ITEM 3
     # ============================================
-    # Busca por TODAS as ocorrências de "Valida até" ou "Válida até"
     cert_federal_datas = re.findall(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
     
     if cert_federal_datas:
-        # Pega a data mais recente (última encontrada)
         dados['cert_federal_validade'] = cert_federal_datas[-1]
-        dados['cert_federal_origem'] = "expressão 'Valida até'"
     else:
-        # Fallback: tentar encontrar data de emissão
         emissao_datas = re.findall(r'emitida[:\s]*.*?(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-        if emissao_datas:
-            dados['cert_federal_validade'] = emissao_datas[-1]
-            dados['cert_federal_origem'] = "data de emissão"
-        else:
-            dados['cert_federal_validade'] = "01/08/2026"
-            dados['cert_federal_origem'] = "padrão"
+        dados['cert_federal_validade'] = emissao_datas[-1] if emissao_datas else "01/08/2026"
     
     # ============================================
     # CERTIDÃO FGTS - ITEM 4
     # ============================================
-    # Busca por TODAS as ocorrências de CRF (validade)
     cert_fgts_datas = re.findall(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
     
     if cert_fgts_datas:
-        # Pega a mais recente (última encontrada)
         dados['cert_fgts_inicio'] = cert_fgts_datas[-1][0]
         dados['cert_fgts_fim'] = cert_fgts_datas[-1][1]
     else:
@@ -178,14 +171,8 @@ def extrair_dados_completos(texto):
     # ============================================
     # CERTIDÃO TRABALHISTA - ITEM 5
     # ============================================
-    # Busca por TODAS as ocorrências de validade da certidão trabalhista
     cert_trab_datas = re.findall(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    
-    if cert_trab_datas:
-        # Pega a data mais recente (última encontrada)
-        dados['cert_trab_validade'] = cert_trab_datas[-1]
-    else:
-        dados['cert_trab_validade'] = "01/08/2026"
+    dados['cert_trab_validade'] = cert_trab_datas[-1] if cert_trab_datas else "01/08/2026"
     
     # 19. DISPENSA RETENÇÃO (Item 7)
     dispensa_match = re.search(r'DISPENSA RETENÇÃO P/ PREVIDÊNCIA SOCIAL \(INSS\)', texto, re.IGNORECASE)
@@ -214,24 +201,13 @@ def verificar_validade(data_str):
     if data_str == "Não identificado" or not data_str:
         return False, None
     try:
-        # Tentar diferentes formatos de data
-        formatos = ["%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"]
-        data = None
-        for fmt in formatos:
-            try:
-                data = datetime.strptime(data_str, fmt)
-                break
-            except:
-                continue
-        
-        if data:
-            return data < datetime.now(), data
-        return False, None
+        data = datetime.strptime(data_str, "%d/%m/%Y")
+        return data < datetime.now(), data
     except:
         return False, None
 
 # ============================================
-# FUNÇÃO PARA GERAR PDF PROFISSIONAL (VERSÃO ANTERIOR)
+# FUNÇÃO PARA GERAR PDF PROFISSIONAL
 # ============================================
 
 def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto):
@@ -289,6 +265,16 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         fontName='Helvetica',
         leading=12,
         wordWrap='CJK'
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='TextoLegal',
+        parent=styles['Normal'],
+        fontSize=7,
+        fontName='Helvetica',
+        leading=10,
+        leftIndent=10,
+        spaceAfter=6
     ))
     
     styles.add(ParagraphStyle(
@@ -422,6 +408,30 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         elements.append(Spacer(1, 0.1*cm))
         elements.append(Paragraph(f"     {observacao_texto}", styles['InfoValue']))
         elements.append(Spacer(1, 0.3*cm))
+    
+    # ========================================
+    # TEXTO LEGAL (NOVO)
+    # ========================================
+    
+    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
+    elements.append(Paragraph(f"{dados['sei_atestado']}.", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.1*cm))
+    
+    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegal']))
+    elements.append(Paragraph(f"{dados['sei_liquidacao']}.", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.2*cm))
+    
+    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.1*cm))
+    
+    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.1*cm))
+    
+    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.2*cm))
+    
+    elements.append(Paragraph("At.te", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.5*cm))
     
     # ========================================
     # RODAPÉ (sem assinatura)
@@ -612,7 +622,6 @@ if st.session_state.autenticado:
                 conclusao = exigencia_texto
             else:
                 conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI {dados['sei_liquidacao']}"
-                exigencia_texto = ""
             
             # Pergunta sobre observações
             tem_observacao = st.radio("📝 Existe alguma observação a fazer?", ["Não", "Sim"], horizontal=True)
@@ -643,4 +652,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v5.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
