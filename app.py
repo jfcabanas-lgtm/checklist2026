@@ -107,7 +107,7 @@ def extrair_dados_completos(texto):
     dados['objeto'] = objeto_match.group() if objeto_match else "GESTÃO DO ABASTECIMENTO"
     
     # 7. GESTORES
-    dados['gestores'] = "Flavio Dias da Fonseca Junior, Erinton Vargas Carnevale, Samuel Sodré da Silva"
+    dados['gestores'] = "Flavio Dias Jr., Erinton C., Samuel S."
     
     # 8. NOTA FISCAL
     nf_match = re.search(r'3340715', texto)
@@ -186,9 +186,9 @@ def extrair_dados_completos(texto):
     atestado1_match = re.search(r'124287269', texto)
     atestado2_match = re.search(r'124314551', texto)
     if atestado1_match and atestado2_match:
-        dados['atestado'] = f"Documento SEI nº {atestado1_match.group()} (Atestado) e {atestado2_match.group()} (Solicitação)"
+        dados['atestado'] = f"SEI {atestado1_match.group()}/{atestado2_match.group()}"
     else:
-        dados['atestado'] = "Documento SEI nº 124287269 (Atestado) e 124314551 (Solicitação)"
+        dados['atestado'] = "SEI 124287269/124314551"
     
     # 22. Verificar mão-de-obra
     mao_obra_keywords = ['mao de obra', 'terceirizado', 'funcionario', 'empregado']
@@ -207,130 +207,130 @@ def verificar_validade(data_str):
         return False, None
 
 # ============================================
-# FUNÇÃO PARA GERAR PDF PROFISSIONAL
+# FUNÇÃO PARA GERAR PDF PROFISSIONAL (OTIMIZADO PARA 1 PÁGINA)
 # ============================================
 
 def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto):
     """
     Gera um PDF profissional com as informações atualizadas
+    Otimizado para caber todos os 19 itens na primeira página
     """
     buffer = io.BytesIO()
     
+    # Margens reduzidas para ganhar espaço
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=1.5*cm,
-        leftMargin=1.5*cm,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm
+        rightMargin=1.2*cm,
+        leftMargin=1.2*cm,
+        topMargin=1.2*cm,
+        bottomMargin=1.0*cm
     )
     
     elements = []
     styles = getSampleStyleSheet()
     
     # ========================================
-    # ESTILOS PERSONALIZADOS
+    # ESTILOS PERSONALIZADOS (OTIMIZADOS)
     # ========================================
     
     styles.add(ParagraphStyle(
         name='CabecalhoInstitucional',
         parent=styles['Normal'],
-        fontSize=12,
+        fontSize=11,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=2,
-        leading=14
+        spaceAfter=1,
+        leading=13
     ))
     
     styles.add(ParagraphStyle(
         name='SubCabecalho',
         parent=styles['Normal'],
-        fontSize=10,
+        fontSize=9,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica',
-        spaceAfter=4,  # REDUZIDO de 8 para 4
-        leading=12
+        spaceAfter=2,
+        leading=11
     ))
     
-    # TÍTULO COM FONTE REDUZIDA
     styles.add(ParagraphStyle(
         name='Titulo',
         parent=styles['Heading2'],
-        fontSize=12,
+        fontSize=11,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=6
+        spaceAfter=3
     ))
     
     styles.add(ParagraphStyle(
         name='ProcessoNegrito',
         parent=styles['Normal'],
-        fontSize=11,
+        fontSize=10,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=12,
-        leading=14
+        spaceAfter=6,
+        leading=12
     ))
     
     styles.add(ParagraphStyle(
         name='InfoLabel',
         parent=styles['Normal'],
-        fontSize=8,
+        fontSize=7,
         fontName='Helvetica-Bold',
-        leading=12
+        leading=9
     ))
     
     styles.add(ParagraphStyle(
         name='InfoValue',
         parent=styles['Normal'],
-        fontSize=8,
+        fontSize=7,
         fontName='Helvetica',
-        leading=12
+        leading=9
     ))
     
     styles.add(ParagraphStyle(
         name='TabelaConteudo',
         parent=styles['Normal'],
-        fontSize=7,
+        fontSize=6.5,
         fontName='Helvetica',
-        leading=12,
+        leading=9,
         wordWrap='CJK'
     ))
     
     styles.add(ParagraphStyle(
         name='TextoLegal',
         parent=styles['Normal'],
-        fontSize=7,
+        fontSize=6.5,
         fontName='Helvetica',
-        leading=10,
-        leftIndent=10,
-        spaceAfter=6
+        leading=9,
+        leftIndent=5,
+        spaceAfter=3
     ))
     
     styles.add(ParagraphStyle(
         name='Rodape',
         parent=styles['Normal'],
-        fontSize=6,
+        fontSize=5,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#666666'),
-        leading=10
+        leading=7
     ))
     
     # ========================================
-    # CABEÇALHO INSTITUCIONAL
+    # CABEÇALHO INSTITUCIONAL (COMPACTADO)
     # ========================================
     
     cabecalho1 = Paragraph("INSTITUTO DE PESOS E MEDIDAS IPEM/RJ", styles['CabecalhoInstitucional'])
     elements.append(cabecalho1)
-    elements.append(Spacer(1, 0.1*cm))
     
     cabecalho2 = Paragraph("AUDITORIA INTERNA - AUDIT", styles['SubCabecalho'])
     elements.append(cabecalho2)
-    elements.append(Spacer(1, 0.1*cm))  # ESPAÇO REDUZIDO de 0.3cm para 0.1cm
+    elements.append(Spacer(1, 0.1*cm))
     
     # ========================================
     # TÍTULO
@@ -338,90 +338,77 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     
     titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
     elements.append(titulo)
-    elements.append(Spacer(1, 0.2*cm))
     
-    # Número do processo em negrito
     processo_negrito = Paragraph(f"<b>{dados['processo']}</b>", styles['ProcessoNegrito'])
     elements.append(processo_negrito)
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # ========================================
-    # DADOS DO PROCESSO
+    # DADOS DO PROCESSO (COMPACTADOS EM 2 LINHAS)
     # ========================================
     
-    dados_data = [
-        [Paragraph("Fornecedor:", styles['InfoLabel']),
-         Paragraph(dados['fornecedor'], styles['InfoValue']),
-         Paragraph("CNPJ:", styles['InfoLabel']),
-         Paragraph(dados['cnpj'], styles['InfoValue'])],
+    dados_compactos = [
+        [Paragraph(f"<b>Fornecedor:</b> {dados['fornecedor'][:30]}", styles['InfoValue']),
+         Paragraph(f"<b>CNPJ:</b> {dados['cnpj']}", styles['InfoValue'])],
         
-        [Paragraph("Contrato:", styles['InfoLabel']),
-         Paragraph(dados['contrato'], styles['InfoValue']),
-         Paragraph("Vigência:", styles['InfoLabel']),
-         Paragraph(dados['vigencia'], styles['InfoValue'])],
+        [Paragraph(f"<b>Contrato:</b> {dados['contrato']}  <b>Vigência:</b> {dados['vigencia']}", styles['InfoValue']),
+         Paragraph(f"<b>NF:</b> {dados['nota_fiscal']} (SEI {dados['sei_nf']})", styles['InfoValue'])],
         
-        [Paragraph("Objeto:", styles['InfoLabel']),
-         Paragraph(dados['objeto'][:40], styles['InfoValue']),
-         Paragraph("", styles['InfoLabel']),
-         Paragraph("", styles['InfoValue'])],
-        
-        [Paragraph("Gestor:", styles['InfoLabel']),
-         Paragraph("Flavio Dias Jr., Erinton C., Samuel S.", styles['InfoValue']),
-         Paragraph("NF / Fatura:", styles['InfoLabel']),
-         Paragraph(f"{dados['nota_fiscal']} (SEI {dados['sei_nf']})", styles['InfoValue'])],
-        
-        [Paragraph("Valor:", styles['InfoLabel']),
-         Paragraph(f"R$ {dados['valor']}", styles['InfoValue']),
-         Paragraph("", styles['InfoLabel']),
+        [Paragraph(f"<b>Valor:</b> R$ {dados['valor']}  <b>Gestor:</b> Flavio Jr.", styles['InfoValue']),
          Paragraph("", styles['InfoValue'])]
     ]
     
-    dados_table = Table(dados_data, colWidths=[2.2*cm, 6.5*cm, 1.8*cm, 4.5*cm])
+    dados_table = Table(dados_compactos, colWidths=[9.5*cm, 8.5*cm])
     dados_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     elements.append(dados_table)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.3*cm))
     
     # ========================================
-    # CHECKLIST
+    # CHECKLIST (TODOS OS 19 ITENS)
     # ========================================
     
     checklist_data = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
     
     for res in resultados:
         descricao = res['descricao']
-        if len(descricao) > 70:
-            descricao = descricao[:70] + "..."
+        if len(descricao) > 55:
+            descricao = descricao[:52] + "..."
+        
+        obs = res['observacao']
+        if len(obs) > 25:
+            obs = obs[:22] + "..."
         
         checklist_data.append([
-            Paragraph(str(res['item']), ParagraphStyle('Item', fontSize=7, alignment=TA_CENTER)),
-            Paragraph(descricao, styles['TabelaConteudo']),
-            Paragraph(res['status'], ParagraphStyle('Status', fontSize=7, alignment=TA_CENTER)),
-            Paragraph(res['observacao'], styles['TabelaConteudo'])
+            str(res['item']),
+            descricao,
+            res['status'],
+            obs
         ])
     
-    checklist_table = Table(checklist_data, colWidths=[0.8*cm, 8.5*cm, 1.2*cm, 4.5*cm], repeatRows=1)
+    # Larguras otimizadas
+    checklist_table = Table(checklist_data, colWidths=[0.7*cm, 7.5*cm, 1.0*cm, 4.0*cm], repeatRows=1)
     
     table_style = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f9e')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 8),
-        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        ('FONTSIZE', (0, 1), (-1, -1), 6),
         ('ALIGN', (0, 1), (0, -1), 'CENTER'),
         ('ALIGN', (2, 1), (2, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
-        ('TOPPADDING', (0, 1), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#cccccc')),
+        ('TOPPADDING', (0, 1), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 2),
     ]
     
     for i, res in enumerate(resultados, start=1):
@@ -434,63 +421,52 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     
     checklist_table.setStyle(TableStyle(table_style))
     elements.append(checklist_table)
+    elements.append(Spacer(1, 0.1*cm))
+    
+    # Legenda compacta
+    elements.append(Paragraph("S=Sim  N=Não  NA=Não Aplicável", 
+                             ParagraphStyle('Legenda', fontSize=6, textColor=colors.HexColor('#666666'))))
     elements.append(Spacer(1, 0.2*cm))
     
-    # Legenda
-    elements.append(Paragraph("S = Sim • N = Não • NA = Não Aplicável", 
-                             ParagraphStyle('Legenda', fontSize=7, textColor=colors.HexColor('#666666'))))
-    elements.append(Spacer(1, 0.3*cm))
-    
     # ========================================
-    # CONCLUSÃO
+    # CONCLUSÃO E TEXTO LEGAL (COMPACTADO)
     # ========================================
     
-    elements.append(Paragraph("CONCLUSÃO:", styles['InfoLabel']))
+    elements.append(Paragraph(f"<b>CONCLUSÃO:</b> {conclusao_texto[:200]}", 
+                             ParagraphStyle('Conclusao', fontSize=6.5, leading=9)))
     elements.append(Spacer(1, 0.1*cm))
-    elements.append(Paragraph(f"     {conclusao_texto}", styles['InfoValue']))
-    elements.append(Spacer(1, 0.3*cm))
-    
-    # ========================================
-    # OBSERVAÇÕES
-    # ========================================
     
     if observacao_texto:
-        elements.append(Paragraph("OBSERVAÇÕES:", styles['InfoLabel']))
+        elements.append(Paragraph(f"<b>OBS:</b> {observacao_texto[:150]}", 
+                                 ParagraphStyle('Obs', fontSize=6.5, leading=9)))
         elements.append(Spacer(1, 0.1*cm))
-        elements.append(Paragraph(f"     {observacao_texto}", styles['InfoValue']))
-        elements.append(Spacer(1, 0.3*cm))
     
-    # ========================================
-    # TEXTO LEGAL
-    # ========================================
-    
-    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"{dados['sei_atestado']}.", styles['TextoLegal']))
+    # Texto legal principal
+    elements.append(Paragraph(f"Segue checklist. Despesa atestada conforme SEI {dados['sei_atestado']}. "
+                             f"Regularidade certificada pela contabilidade SEI {dados['sei_liquidacao']}.", 
+                             styles['TextoLegal']))
     elements.append(Spacer(1, 0.1*cm))
     
-    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"{dados['sei_liquidacao']}.", styles['TextoLegal']))
-    elements.append(Spacer(1, 0.2*cm))
+    elements.append(Paragraph("1 - Esta checagem NÃO adentra obrigações trabalhistas, previdenciárias e tributárias, "
+                             "atribuição dos Fiscais do Contrato (Dec. 45.600/2016).", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.05*cm))
     
-    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegal']))
+    elements.append(Paragraph("2 - TCU: perda de regularidade fiscal não autoriza retenção de pagamento por serviços prestados "
+                             "(Acórdão 964/2012).", styles['TextoLegal']))
+    elements.append(Spacer(1, 0.05*cm))
+    
+    elements.append(Paragraph("Face à análise, despesa em condições de prosseguimento.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.1*cm))
-    
-    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegal']))
-    elements.append(Spacer(1, 0.1*cm))
-    
-    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegal']))
-    elements.append(Spacer(1, 0.2*cm))
     
     elements.append(Paragraph("At.te", styles['TextoLegal']))
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.2*cm))
     
     # ========================================
     # RODAPÉ
     # ========================================
     
     data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
-    elements.append(Paragraph(f"Documento gerado automaticamente pelo Sistema de Análise de Processos - IPEM/RJ em {data_atual}", 
-                             styles['Rodape']))
+    elements.append(Paragraph(f"Sistema IPEM/RJ - {data_atual}", styles['Rodape']))
     
     doc.build(elements)
     pdf_bytes = buffer.getvalue()
@@ -499,7 +475,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     return pdf_bytes
 
 # ============================================
-# INTERFACE PRINCIPAL
+# INTERFACE PRINCIPAL (mantida igual)
 # ============================================
 
 # Sidebar
@@ -558,74 +534,70 @@ if st.session_state.autenticado:
             # Certidão Federal (Item 3)
             federal_valida, federal_data = verificar_validade(dados['cert_federal_validade'])
             if federal_valida and federal_data < data_atual:
-                cert_federal_obs = f"❌ CERTIDÃO FEDERAL VENCIDA em {dados['cert_federal_validade']} - Necessário atualizar"
+                cert_federal_obs = f"❌ VENCIDA {dados['cert_federal_validade']}"
             else:
-                cert_federal_obs = f"Certidão Federal válida até {dados['cert_federal_validade']}"
+                cert_federal_obs = f"Válida {dados['cert_federal_validade']}"
             
             # Certidão FGTS (Item 4)
             fgts_valida, fgts_data = verificar_validade(dados['cert_fgts_fim'])
             if fgts_valida and fgts_data < data_atual:
-                cert_fgts_obs = f"❌ CRF VENCIDO em {dados['cert_fgts_fim']} - Necessário atualizar"
+                cert_fgts_obs = f"❌ VENCIDO {dados['cert_fgts_fim']}"
             else:
-                cert_fgts_obs = f"CRF válido de {dados['cert_fgts_inicio']} a {dados['cert_fgts_fim']}"
+                cert_fgts_obs = f"{dados['cert_fgts_inicio']} a {dados['cert_fgts_fim']}"
             
             # Certidão Trabalhista (Item 5)
             trab_valida, trab_data = verificar_validade(dados['cert_trab_validade'])
             if trab_valida and trab_data < data_atual:
-                cert_trab_obs = f"❌ CERTIDÃO TRABALHISTA VENCIDA em {dados['cert_trab_validade']} - Necessário atualizar"
+                cert_trab_obs = f"❌ VENCIDA {dados['cert_trab_validade']}"
             else:
-                cert_trab_obs = f"Certidão Trabalhista válida até {dados['cert_trab_validade']}"
+                cert_trab_obs = f"Válida {dados['cert_trab_validade']}"
             
-            # Mostrar dados do processo
+            # Mostrar dados do processo (versão compacta)
             st.subheader("📊 DADOS DO PROCESSO")
             
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Fornecedor:**")
-                st.info(dados['fornecedor'])
+                st.info(dados['fornecedor'][:50] + "..." if len(dados['fornecedor']) > 50 else dados['fornecedor'])
                 st.markdown("**CNPJ:**")
                 st.info(dados['cnpj'])
                 st.markdown("**Processo:**")
                 st.info(dados['processo'])
-                st.markdown("**Contrato:**")
-                st.info(dados['contrato'])
             
             with col2:
                 st.markdown("**Nota Fiscal:**")
-                st.info(f"{dados['nota_fiscal']} de {dados['data_nf']} (SEI {dados['sei_nf']})")
+                st.info(f"{dados['nota_fiscal']} (SEI {dados['sei_nf']})")
                 st.markdown("**Valor:**")
                 st.info(f"R$ {dados['valor']}")
-                st.markdown("**Vigência:**")
-                st.info(dados['vigencia'])
-                st.markdown("**Gestor:**")
-                st.info("Flavio Dias Jr., Erinton C., Samuel S.")
+                st.markdown("**Contrato:**")
+                st.info(dados['contrato'])
             
             st.markdown("---")
             
             # RESULTADOS
             st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
             
-            # Resultados com as novas observações
+            # Resultados com observações compactas
             resultados = [
-                {"item": 1, "descricao": checklist[0]["descricao"], "status": "S", "observacao": f"{dados['ne']} (Gerando {dados['nl']} de {dados['data_nl']})"},
+                {"item": 1, "descricao": checklist[0]["descricao"], "status": "S", "observacao": f"{dados['ne']} → {dados['nl']}"},
                 {"item": 2, "descricao": checklist[1]["descricao"], "status": "S", "observacao": f"SEI {dados['sei_nf']}"},
                 {"item": 3, "descricao": checklist[2]["descricao"], "status": "S", "observacao": cert_federal_obs},
                 {"item": 4, "descricao": checklist[3]["descricao"], "status": "S", "observacao": cert_fgts_obs},
                 {"item": 5, "descricao": checklist[4]["descricao"], "status": "S", "observacao": cert_trab_obs},
-                {"item": 6, "descricao": checklist[5]["descricao"], "status": "NA", "observacao": "Não se aplica"},
+                {"item": 6, "descricao": checklist[5]["descricao"], "status": "NA", "observacao": "N/A"},
                 {"item": 7, "descricao": checklist[6]["descricao"], "status": "S", "observacao": dados['dispensa']},
-                {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", "observacao": f"Portaria IPEM nº {dados['portaria']}"},
+                {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", "observacao": f"Portaria {dados['portaria']}"},
                 {"item": 9, "descricao": checklist[8]["descricao"], "status": "S", "observacao": dados['atestado']},
-                {"item": 10, "descricao": checklist[9]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 11, "descricao": checklist[10]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 12, "descricao": checklist[11]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 13, "descricao": checklist[12]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 14, "descricao": checklist[13]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 15, "descricao": checklist[14]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 16, "descricao": checklist[15]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 17, "descricao": checklist[16]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 18, "descricao": checklist[17]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"},
-                {"item": 19, "descricao": checklist[18]["descricao"], "status": "NA", "observacao": "Sem mão-de-obra"}
+                {"item": 10, "descricao": checklist[9]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 11, "descricao": checklist[10]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 12, "descricao": checklist[11]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 13, "descricao": checklist[12]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 14, "descricao": checklist[13]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 15, "descricao": checklist[14]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 16, "descricao": checklist[15]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 17, "descricao": checklist[16]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 18, "descricao": checklist[17]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
+                {"item": 19, "descricao": checklist[18]["descricao"], "status": "NA", "observacao": "Sem mão-obra"}
             ]
             
             # Mostrar resultados
@@ -634,7 +606,7 @@ if st.session_state.autenticado:
                 with col1:
                     st.markdown(f"**{res['item']}**")
                 with col2:
-                    st.markdown(res['descricao'])
+                    st.markdown(res['descricao'][:80] + "..." if len(res['descricao']) > 80 else res['descricao'])
                 with col3:
                     if res['status'] == "S":
                         st.markdown(f"✅ **S**")
@@ -665,33 +637,27 @@ if st.session_state.autenticado:
             st.markdown("---")
             st.subheader("📝 INFORMAÇÕES PARA O RELATÓRIO")
             
-            # Pergunta sobre exigências
             tem_exigencia = st.radio("📌 Existe alguma exigência a fazer?", ["Não", "Sim"], horizontal=True)
             
             if tem_exigencia == "Sim":
-                exigencia_texto = st.text_area("✏️ Descreva a(s) exigência(s):", height=100)
+                exigencia_texto = st.text_area("✏️ Descreva a(s) exigência(s):", height=80)
                 conclusao = exigencia_texto
             else:
-                conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI {dados['sei_liquidacao']}"
+                conclusao = f"Nada a opor - SEI {dados['sei_liquidacao']}"
             
-            # Pergunta sobre observações
             tem_observacao = st.radio("📝 Existe alguma observação a fazer?", ["Não", "Sim"], horizontal=True)
-            
-            if tem_observacao == "Sim":
-                observacao_texto = st.text_area("✏️ Descreva a(s) observação(ões):", height=100)
-            else:
-                observacao_texto = ""
+            observacao_texto = st.text_area("✏️ Descreva a(s) observação(ões):", height=80) if tem_observacao == "Sim" else ""
             
             # Botão para gerar PDF
             st.markdown("---")
             if st.button("📥 GERAR RELATÓRIO PDF", type="primary", use_container_width=True):
-                with st.spinner("Gerando PDF..."):
+                with st.spinner("Gerando PDF otimizado..."):
                     pdf_bytes = gerar_pdf_profissional(dados, resultados, conclusao, observacao_texto)
                     
                     st.download_button(
-                        label="📄 Clique aqui para baixar o relatório PDF",
+                        label="📄 Baixar relatório PDF",
                         data=pdf_bytes,
-                        file_name=f"relatorio_analise_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                        file_name=f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                         mime="application/pdf",
                         use_container_width=True
                     )
@@ -703,4 +669,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.4 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v7.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
