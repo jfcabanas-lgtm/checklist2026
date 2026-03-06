@@ -9,9 +9,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 
 st.set_page_config(
     page_title="Análise IPEM-RJ",
@@ -645,4 +642,8 @@ if uploaded_file:
             {"item": 6, "descricao": checklist[5]["descricao"], "status": "NA", "observacao": "Não se aplica (serviço com dispensa de retenção conforme descrito na NF)"},
             {"item": 7, "descricao": checklist[6]["descricao"], "status": "S", "observacao": f"Consta na NF: {dados['dispensa']}"},
             {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", "observacao": dados['portaria']},
-            {"item": 9
+            {"item": 9, "descricao": checklist[8]["descricao"], "status": "S", "observacao": dados['atestado']}
+        ]
+        
+        # Itens 10-19 (mão-de-obra)
+        for i in range(9, 19
