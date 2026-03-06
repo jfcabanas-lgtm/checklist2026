@@ -239,7 +239,18 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=12
+        spaceAfter=6
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='ProcessoNegrito',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica-Bold',
+        spaceAfter=12,
+        leading=14
     ))
     
     styles.add(ParagraphStyle(
@@ -287,11 +298,16 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     ))
     
     # ========================================
-    # TÍTULO
+    # TÍTULO (MODIFICADO)
     # ========================================
     
-    titulo = Paragraph("CHECKLIST DE DOCUMENTAÇÃO DOS PROCESSOS DE DESPESAS REGULARES", styles['Titulo'])
+    titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
     elements.append(titulo)
+    elements.append(Spacer(1, 0.2*cm))
+    
+    # Número do processo em negrito (NOVO)
+    processo_negrito = Paragraph(f"<b>{dados['processo']}</b>", styles['ProcessoNegrito'])
+    elements.append(processo_negrito)
     elements.append(Spacer(1, 0.3*cm))
     
     # ========================================
@@ -410,7 +426,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         elements.append(Spacer(1, 0.3*cm))
     
     # ========================================
-    # TEXTO LEGAL (NOVO)
+    # TEXTO LEGAL
     # ========================================
     
     elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
@@ -434,7 +450,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     elements.append(Spacer(1, 0.5*cm))
     
     # ========================================
-    # RODAPÉ (sem assinatura)
+    # RODAPÉ
     # ========================================
     
     data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
@@ -652,4 +668,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
