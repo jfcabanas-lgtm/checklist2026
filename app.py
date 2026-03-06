@@ -214,7 +214,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
     """
     Gera um PDF com:
     - Página 1: Checklist completo (19 itens)
-    - Página 2: Texto legal e conclusão
+    - Página 2: Texto legal e conclusão (fonte aumentada)
     """
     buffer = io.BytesIO()
     
@@ -302,22 +302,36 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         wordWrap='CJK'
     ))
     
+    # ========================================
+    # ESTILOS DA PÁGINA 2 (FONTE AUMENTADA)
+    # ========================================
+    
     styles.add(ParagraphStyle(
-        name='TextoLegal',
+        name='TextoLegalPagina2',
         parent=styles['Normal'],
-        fontSize=8,
+        fontSize=9,  # AUMENTADO de 8 para 9
         fontName='Helvetica',
-        leading=12,
+        leading=13,  # AUMENTADO proporcionalmente
         leftIndent=10,
         spaceAfter=8
     ))
     
     styles.add(ParagraphStyle(
-        name='TextoLegalTitulo',
+        name='TextoSemiNegritoPagina2',
         parent=styles['Normal'],
-        fontSize=9,
+        fontSize=9,  # AUMENTADO de 8 para 9
         fontName='Helvetica-Bold',
-        leading=12,
+        leading=13,
+        leftIndent=10,
+        spaceAfter=8
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='TituloSecaoPagina2',
+        parent=styles['Normal'],
+        fontSize=10,  # AUMENTADO de 9 para 10
+        fontName='Helvetica-Bold',
+        leading=14,
         spaceAfter=6
     ))
     
@@ -428,43 +442,39 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
     elements.append(PageBreak())
     
     # ========================================
-    # PÁGINA 2 - TEXTO LEGAL E CONCLUSÃO
+    # PÁGINA 2 - TEXTO LEGAL E CONCLUSÃO (FONTE AUMENTADA)
     # ========================================
     
-    # Título da página 2
-    elements.append(Paragraph("PARECER DA AUDITORIA INTERNA", 
-                             ParagraphStyle('TituloPagina2', parent=styles['Titulo'], fontSize=12, spaceAfter=12)))
-    
-    # Texto legal completo
-    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"<b>{dados['sei_atestado']}</b>.", styles['TextoLegal']))
+    # Texto legal completo (sem título "PARECER DA AUDITORIA INTERNA")
+    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegalPagina2']))
+    elements.append(Paragraph(f"<b>{dados['sei_atestado']}</b>.", styles['TextoSemiNegritoPagina2']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"<b>{dados['sei_liquidacao']}</b>.", styles['TextoLegal']))
+    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegalPagina2']))
+    elements.append(Paragraph(f"<b>{dados['sei_liquidacao']}</b>.", styles['TextoSemiNegritoPagina2']))
     elements.append(Spacer(1, 0.3*cm))
     
-    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegal']))
+    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegalPagina2']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegal']))
+    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegalPagina2']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegal']))
+    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegalPagina2']))
     elements.append(Spacer(1, 0.3*cm))
     
     # CONCLUSÃO (baseada na resposta do usuário)
-    elements.append(Paragraph("CONCLUSÃO:", styles['TextoLegalTitulo']))
-    elements.append(Paragraph(conclusao_texto, styles['TextoLegal']))
+    elements.append(Paragraph("CONCLUSÃO:", styles['TituloSecaoPagina2']))
+    elements.append(Paragraph(conclusao_texto, styles['TextoLegalPagina2']))
     elements.append(Spacer(1, 0.3*cm))
     
     # Observações adicionais
     if observacao_texto:
-        elements.append(Paragraph("OBSERVAÇÕES:", styles['TextoLegalTitulo']))
-        elements.append(Paragraph(observacao_texto, styles['TextoLegal']))
+        elements.append(Paragraph("OBSERVAÇÕES:", styles['TituloSecaoPagina2']))
+        elements.append(Paragraph(observacao_texto, styles['TextoLegalPagina2']))
         elements.append(Spacer(1, 0.3*cm))
     
-    elements.append(Paragraph("At.te", styles['TextoLegal']))
+    elements.append(Paragraph("At.te", styles['TextoLegalPagina2']))
     elements.append(Spacer(1, 0.5*cm))
     
     # Espaço para assinatura (opcional, sem linha)
@@ -658,7 +668,7 @@ if st.session_state.autenticado:
             # Botão para gerar PDF
             st.markdown("---")
             if st.button("📥 GERAR RELATÓRIO PDF (2 PÁGINAS)", type="primary", use_container_width=True):
-                with st.spinner("Gerando PDF com checklist na página 1 e parecer na página 2..."):
+                with st.spinner("Gerando PDF com checklist na página 1 e texto legal na página 2..."):
                     pdf_bytes = gerar_pdf_duas_paginas(dados, resultados, conclusao, observacao_texto)
                     
                     st.download_button(
@@ -676,4 +686,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v8.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v8.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
