@@ -8,7 +8,10 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 
 st.set_page_config(
     page_title="Análise IPEM-RJ",
@@ -44,6 +47,13 @@ st.markdown("""
         background-color: #d1ecf1;
         border-left: 5px solid #17a2b8;
         border-radius: 5px;
+    }
+    .pdf-preview {
+        font-family: 'Courier New', monospace;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -174,94 +184,386 @@ def extrair_dados_completos(texto):
     
     return dados
 
-# Função para gerar PDF
-def gerar_pdf_resultados(dados, resultados, conclusao, observacoes):
+# ============================================
+# FUNÇÃO PARA GERAR PDF PROFISSIONAL
+# ============================================
+
+def gerar_pdf_profissional(dados, resultados, observacoes):
+    """
+    Gera um PDF profissional e bem formatado
+    """
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
     
+    # Configuração do documento
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=1.5*cm,
+        leftMargin=1.5*cm,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+        title="Checklist de Documentação - IPEM/RJ",
+        author="Auditoria Interna IPEM-RJ"
+    )
+    
+    # Elementos do documento
     elements = []
     styles = getSampleStyleSheet()
     
-    # Estilos
-    styles.add(ParagraphStyle(name='Cabecalho', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f9e')))
-    styles.add(ParagraphStyle(name='TituloPrincipal', parent=styles['Heading2'], fontSize=14, alignment=TA_CENTER, textColor=colors.HexColor('#1a5f9e'), fontName='Helvetica-Bold'))
+    # ========================================
+    # ESTILOS PERSONALIZADOS
+    # ========================================
     
-    # Cabeçalho
+    # Cabeçalho principal
+    styles.add(ParagraphStyle(
+        name='CabecalhoPrincipal',
+        parent=styles['Normal'],
+        fontSize=12,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica-Bold',
+        spaceAfter=2
+    ))
+    
+    # Cabeçalho secundário
+    styles.add(ParagraphStyle(
+        name='CabecalhoSecundario',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica',
+        spaceAfter=2
+    ))
+    
+    # Título principal
+    styles.add(ParagraphStyle(
+        name='TituloPrincipal',
+        parent=styles['Heading2'],
+        fontSize=14,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica-Bold',
+        spaceAfter=12,
+        spaceBefore=6
+    ))
+    
+    # Subtítulo
+    styles.add(ParagraphStyle(
+        name='Subtitulo',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#333333'),
+        fontName='Helvetica-Bold',
+        spaceAfter=10
+    ))
+    
+    # Informações do processo (labels)
+    styles.add(ParagraphStyle(
+        name='InfoLabel',
+        parent=styles['Normal'],
+        fontSize=9,
+        fontName='Helvetica-Bold',
+        textColor=colors.HexColor('#333333'),
+        spaceAfter=2
+    ))
+    
+    # Informações do processo (valores)
+    styles.add(ParagraphStyle(
+        name='InfoValue',
+        parent=styles['Normal'],
+        fontSize=9,
+        fontName='Helvetica',
+        textColor=colors.HexColor('#000000'),
+        spaceAfter=4,
+        leftIndent=5
+    ))
+    
+    # Tabela cabeçalho
+    styles.add(ParagraphStyle(
+        name='TabelaCabecalho',
+        parent=styles['Normal'],
+        fontSize=9,
+        fontName='Helvetica-Bold',
+        alignment=TA_CENTER,
+        textColor=colors.whitesmoke
+    ))
+    
+    # Tabela conteúdo
+    styles.add(ParagraphStyle(
+        name='TabelaConteudo',
+        parent=styles['Normal'],
+        fontSize=8,
+        fontName='Helvetica',
+        alignment=TA_LEFT
+    ))
+    
+    # Rodapé
+    styles.add(ParagraphStyle(
+        name='Rodape',
+        parent=styles['Normal'],
+        fontSize=7,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#666666'),
+        fontName='Helvetica-Oblique'
+    ))
+    
+    # Observações
+    styles.add(ParagraphStyle(
+        name='Observacoes',
+        parent=styles['Normal'],
+        fontSize=9,
+        fontName='Helvetica',
+        textColor=colors.HexColor('#333333'),
+        spaceAfter=6,
+        leftIndent=10
+    ))
+    
+    # ========================================
+    # CABEÇALHO DO GOVERNO
+    # ========================================
+    
     cabecalho_data = [
         ["GOVERNO DO ESTADO DO RIO DE JANEIRO"],
         ["Secretaria da Casa Civil"],
         ["Instituto de Pesos e Medidas do Estado do Rio de Janeiro"],
         ["Auditoria Interna"]
     ]
-    cabecalho_table = Table(cabecalho_data, colWidths=[doc.width])
-    cabecalho_table.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'), ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'), ('FONTSIZE', (0, 0), (-1, -1), 10), ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1a5f9e'))]))
-    elements.append(cabecalho_table)
     
-    # SEI
-    sei_text = Paragraph(f"SEI - {dados['processo']}", styles['Cabecalho'])
-    elements.append(sei_text)
+    cabecalho_table = Table(cabecalho_data, colWidths=[doc.width])
+    cabecalho_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('FONTSIZE', (0, 1), (0, 1), 10),
+        ('FONTSIZE', (0, 2), (0, 2), 10),
+        ('FONTSIZE', (0, 3), (0, 3), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1a5f9e')),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    elements.append(cabecalho_table)
+    elements.append(Spacer(1, 0.2*cm))
+    
+    # Linha divisória
+    elements.append(Paragraph("—" * 70, styles['Rodape']))
     elements.append(Spacer(1, 0.3*cm))
     
+    # Número SEI
+    sei_text = Paragraph(f"SEI - {dados['processo']}", styles['CabecalhoSecundario'])
+    elements.append(sei_text)
+    elements.append(Spacer(1, 0.4*cm))
+    
     # Título
-    titulo = Paragraph("CHECKLIST DE DOCUMENTAÇÃO DOS PROCESSO DE DESPESAS REGULARES", styles['TituloPrincipal'])
+    titulo = Paragraph("CHECKLIST DE DOCUMENTAÇÃO DOS PROCESSOS DE DESPESAS REGULARES", styles['TituloPrincipal'])
     elements.append(titulo)
     elements.append(Spacer(1, 0.5*cm))
     
-    # Dados do processo
+    # ========================================
+    # DADOS DO PROCESSO
+    # ========================================
+    
+    # Criar uma tabela bonita para os dados do processo
     dados_data = [
-        [f"Nome do fornecedor: {dados['fornecedor']}", f"CNPJ: {dados['cnpj']}"],
-        [f"Contrato / Convênio: {dados['contrato']}", f"Vigência: {dados['vigencia']}"],
-        [f"Objeto do Contrato/Serv./Mat.: {dados['objeto']}", ""],
-        [f"Gestor e Fiscais: {dados['gestores']}", ""],
-        [f"Nº da NF / Fatura: {dados['nota_fiscal']}", f"Venc.: {dados['data_nf']}  Valor: R$ {dados['valor']}"]
+        [
+            Paragraph("Nome do fornecedor:", styles['InfoLabel']),
+            Paragraph(dados['fornecedor'], styles['InfoValue']),
+            Paragraph("CNPJ:", styles['InfoLabel']),
+            Paragraph(dados['cnpj'], styles['InfoValue'])
+        ],
+        [
+            Paragraph("Contrato / Convênio:", styles['InfoLabel']),
+            Paragraph(dados['contrato'], styles['InfoValue']),
+            Paragraph("Vigência:", styles['InfoLabel']),
+            Paragraph(dados['vigencia'], styles['InfoValue'])
+        ],
+        [
+            Paragraph("Objeto do Contrato:", styles['InfoLabel']),
+            Paragraph(dados['objeto'][:60] + "..." if len(dados['objeto']) > 60 else dados['objeto'], styles['InfoValue']),
+            Paragraph("", styles['InfoLabel']),
+            Paragraph("", styles['InfoValue'])
+        ],
+        [
+            Paragraph("Gestor e Fiscais:", styles['InfoLabel']),
+            Paragraph(dados['gestores'], styles['InfoValue']),
+            Paragraph("", styles['InfoLabel']),
+            Paragraph("", styles['InfoValue'])
+        ],
+        [
+            Paragraph("Nº da NF / Fatura:", styles['InfoLabel']),
+            Paragraph(f"{dados['nota_fiscal']}", styles['InfoValue']),
+            Paragraph("Vencimento:", styles['InfoLabel']),
+            Paragraph(f"{dados['data_nf']}  Valor: R$ {dados['valor']}", styles['InfoValue'])
+        ]
     ]
-    dados_table = Table(dados_data, colWidths=[doc.width/2.2, doc.width/2.2])
-    dados_table.setStyle(TableStyle([('FONTNAME', (0, 0), (-1, -1), 'Helvetica'), ('FONTSIZE', (0, 0), (-1, -1), 9), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('LEFTPADDING', (0, 0), (-1, -1), 0)]))
+    
+    dados_table = Table(dados_data, colWidths=[3.5*cm, 7*cm, 2.5*cm, 4*cm])
+    dados_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (1, 0), (1, -1), 5),
+        ('LEFTPADDING', (3, 0), (3, -1), 5),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+    ]))
     elements.append(dados_table)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.6*cm))
     
-    # Checklist
+    # ========================================
+    # CHECKLIST - TABELA PRINCIPAL
+    # ========================================
+    
+    # Cabeçalho da tabela
     checklist_data = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
-    for res in resultados:
-        checklist_data.append([str(res['item']), res['descricao'], res['status'], res['observacao']])
     
-    checklist_table = Table(checklist_data, colWidths=[1.2*cm, 10*cm, 1.5*cm, 4*cm])
-    checklist_table.setStyle(TableStyle([
+    for res in resultados:
+        # Quebrar descrição longa
+        descricao = res['descricao']
+        if len(descricao) > 70:
+            descricao = descricao[:70] + "..."
+        
+        # Para o item 1, garantir formatação especial
+        observacao = res['observacao']
+        
+        checklist_data.append([
+            str(res['item']),
+            descricao,
+            res['status'],
+            observacao[:50] + "..." if len(observacao) > 50 else observacao
+        ])
+    
+    # Criar tabela com larguras adequadas
+    checklist_table = Table(checklist_data, colWidths=[1.2*cm, 9*cm, 1.5*cm, 5*cm])
+    
+    # Estilo base da tabela
+    table_style = [
+        # Cabeçalho
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f9e')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        
+        # Linhas de dados
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
-    ]))
+        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+        ('ALIGN', (2, 1), (2, -1), 'CENTER'),
+        ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
+        
+        # Linhas alternadas
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#ffffff'), colors.HexColor('#f5f5f5')]),
+    ]
+    
+    # Adicionar cores baseadas no status
+    for i, res in enumerate(resultados, start=1):
+        if res['status'] == 'S':
+            bg_color = colors.HexColor('#d4edda')  # Verde claro
+            text_color = colors.HexColor('#155724')
+        elif res['status'] == 'N':
+            bg_color = colors.HexColor('#f8d7da')  # Vermelho claro
+            text_color = colors.HexColor('#721c24')
+        else:
+            bg_color = colors.HexColor('#e2e3e5')  # Cinza claro
+            text_color = colors.HexColor('#383d41')
+        
+        table_style.extend([
+            ('BACKGROUND', (2, i), (2, i), bg_color),
+            ('TEXTCOLOR', (2, i), (2, i), text_color),
+        ])
+    
+    checklist_table.setStyle(TableStyle(table_style))
     elements.append(checklist_table)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.3*cm))
     
     # Legenda
-    elements.append(Paragraph("S = Sim ; N = Não ; N.A. = Não Aplicável", ParagraphStyle('Legenda', parent=styles['Normal'], fontSize=8)))
+    legenda = Paragraph("S = Sim • N = Não • NA = Não Aplicável", 
+                       ParagraphStyle('Legenda', parent=styles['Normal'], fontSize=8, alignment=TA_LEFT, textColor=colors.HexColor('#666666')))
+    elements.append(legenda)
     elements.append(Spacer(1, 0.5*cm))
     
-    # Conclusão
-    elements.append(Paragraph(f"Conclusão: {conclusao}", styles['Normal']))
+    # Linha divisória
+    elements.append(Paragraph("—" * 70, styles['Rodape']))
     elements.append(Spacer(1, 0.3*cm))
-    elements.append(Paragraph(f"     X Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade.", styles['Normal']))
+    
+    # ========================================
+    # EXIGÊNCIAS E CONCLUSÃO
+    # ========================================
+    
+    elements.append(Paragraph("Exigências:", styles['InfoLabel']))
+    elements.append(Spacer(1, 0.2*cm))
+    
+    # Verificar documentos obrigatórios
+    docs_obrigatorios = [1,2,3,4,5,8,9]
+    obrigatorios_encontrados = sum(1 for r in resultados if r['item'] in docs_obrigatorios and r['status'] == "S")
+    
+    if obrigatorios_encontrados == len(docs_obrigatorios):
+        conclusao_icon = "X"
+        conclusao_text = "Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade."
+        conclusao_color = colors.HexColor('#155724')
+    else:
+        conclusao_icon = ""
+        conclusao_text = "Após a regularização das exigências, retornar à Auditoria Interna para análise processual, com fulcro no art. 62, da Lei 4.320, de 17/03/1964"
+        conclusao_color = colors.HexColor('#856404')
+    
+    # Conclusão com formatação
+    elements.append(Paragraph(f"Conclusão: ", styles['InfoLabel']))
+    elements.append(Spacer(1, 0.1*cm))
+    
+    conclusao_paragraph = Paragraph(f"     {conclusao_icon} {conclusao_text}", 
+                                   ParagraphStyle('Conclusao', parent=styles['Normal'], fontSize=9, leftIndent=10, textColor=conclusao_color))
+    elements.append(conclusao_paragraph)
     elements.append(Spacer(1, 0.5*cm))
     
     # Observações
-    elements.append(Paragraph(f"Observações: {observacoes}", styles['Normal']))
+    elements.append(Paragraph("Observações:", styles['InfoLabel']))
+    elements.append(Spacer(1, 0.1*cm))
+    
+    # Quebrar observações em linhas
+    obs_lines = observacoes.split('\n')
+    for line in obs_lines:
+        if line.strip():
+            elements.append(Paragraph(f"     {line}", styles['Observacoes']))
+    
     elements.append(Spacer(1, 1*cm))
     
-    # Assinatura
-    elements.append(Paragraph("_________________________________________", ParagraphStyle('Assinatura', parent=styles['Normal'], alignment=TA_CENTER)))
-    elements.append(Paragraph("Assinatura do Responsável", ParagraphStyle('AssinaturaLabel', parent=styles['Normal'], alignment=TA_CENTER, fontSize=8)))
+    # ========================================
+    # ASSINATURA E RODAPÉ
+    # ========================================
     
-    # Rodapé
-    elements.append(Spacer(1, 0.5*cm))
-    elements.append(Paragraph(f"Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}", ParagraphStyle('Footer', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.grey)))
+    # Linha para assinatura
+    elements.append(Paragraph("_" * 40, 
+                             ParagraphStyle('LinhaAssinatura', parent=styles['Normal'], alignment=TA_CENTER, fontSize=10)))
+    elements.append(Spacer(1, 0.2*cm))
+    elements.append(Paragraph("Assinatura do Responsável", 
+                             ParagraphStyle('LabelAssinatura', parent=styles['Normal'], alignment=TA_CENTER, fontSize=9, textColor=colors.HexColor('#666666'))))
     
+    elements.append(Spacer(1, 1*cm))
+    
+    # Rodapé com data e informações
+    data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
+    footer_text = f"Documento gerado automaticamente pelo Sistema de Análise de Processos - IPEM/RJ em {data_atual}"
+    elements.append(Paragraph(footer_text, styles['Rodape']))
+    
+    # Número de controle
+    controle = f"Controle: {datetime.now().strftime('%Y%m%d%H%M%S')} | Página 1 de 1"
+    elements.append(Paragraph(controle, styles['Rodape']))
+    
+    # Gerar PDF
     doc.build(elements)
     pdf_bytes = buffer.getvalue()
     buffer.close()
+    
     return pdf_bytes
 
 # ============================================
@@ -343,77 +645,4 @@ if uploaded_file:
             {"item": 6, "descricao": checklist[5]["descricao"], "status": "NA", "observacao": "Não se aplica (serviço com dispensa de retenção conforme descrito na NF)"},
             {"item": 7, "descricao": checklist[6]["descricao"], "status": "S", "observacao": f"Consta na NF: {dados['dispensa']}"},
             {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", "observacao": dados['portaria']},
-            {"item": 9, "descricao": checklist[8]["descricao"], "status": "S", "observacao": dados['atestado']}
-        ]
-        
-        # Itens 10-19 (mão-de-obra)
-        for i in range(9, 19):
-            if dados['tem_mao_obra']:
-                resultados.append({"item": i+1, "descricao": checklist[i]["descricao"], "status": "N", "observacao": "Não localizado"})
-            else:
-                resultados.append({"item": i+1, "descricao": checklist[i]["descricao"], "status": "NA", "observacao": dados['obs_mao_obra']})
-        
-        # Mostrar resultados
-        for res in resultados:
-            col1, col2, col3, col4 = st.columns([0.5, 8, 0.8, 4])
-            with col1:
-                st.markdown(f"**{res['item']}**")
-            with col2:
-                st.markdown(res['descricao'])
-            with col3:
-                if res['status'] == "S":
-                    st.markdown(f"✅ **S**")
-                elif res['status'] == "N":
-                    st.markdown(f"❌ **N**")
-                else:
-                    st.markdown(f"⚪ **NA**")
-            with col4:
-                st.caption(res['observacao'])
-        
-        # RESUMO
-        st.markdown("---")
-        st.subheader("📊 RESUMO DA ANÁLISE")
-        s_count = sum(1 for r in resultados if r['status'] == "S")
-        n_count = sum(1 for r in resultados if r['status'] == "N")
-        na_count = sum(1 for r in resultados if r['status'] == "NA")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Documentos Encontrados (S)", s_count)
-        with col2:
-            st.metric("Documentos Faltantes (N)", n_count)
-        with col3:
-            st.metric("Não Aplicáveis (NA)", na_count)
-        
-        # CONCLUSÃO
-        st.markdown("---")
-        st.subheader("📝 CONCLUSÃO")
-        st.markdown("""
-        <div class="success-box">
-        ✅ <strong>Nada tem a opor quanto ao prosseguimento do processo de pagamento.</strong><br>
-        Todos os documentos obrigatórios (itens 1, 2, 3, 4, 5, 8, 9) foram encontrados e estão regulares.<br>
-        Os itens condicionais foram adequadamente tratados, e os itens de mão-de-obra foram corretamente classificados como não aplicáveis.
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Observações
-        observacoes = st.text_area("📌 Observações:", 
-            value="O processo contém Nota de Empenho (2026NE00123), Nota Fiscal (3340715), e todas as certidões de regularidade exigidas (Federal, FGTS e Trabalhista).\n\nAs certidões estão dentro do prazo de validade na data da análise.\n\nHá Portaria de nomeação (1227/2023) e Atestado do Gestor (documento SEI 124287269).\n\nOs itens de 10 a 19 foram marcados como NA (Não Aplicável) por se tratar de serviço de gestão de abastecimento, que não envolve mão-de-obra dedicada.",
-            height=200)
-        
-        # Botão PDF
-        st.markdown("---")
-        if st.button("📥 GERAR RELATÓRIO PDF", type="primary", use_container_width=True):
-            with st.spinner("Gerando PDF..."):
-                pdf_bytes = gerar_pdf_resultados(dados, resultados, "Nada tem a opor quanto ao prosseguimento", observacoes)
-                st.download_button(
-                    label="📄 Clique aqui para baixar o relatório PDF",
-                    data=pdf_bytes,
-                    file_name=f"relatorio_analise_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-                st.balloons()
-
-st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v3.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            {"item": 9
