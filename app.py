@@ -233,6 +233,28 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     # ========================================
     
     styles.add(ParagraphStyle(
+        name='CabecalhoInstitucional',
+        parent=styles['Normal'],
+        fontSize=12,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica-Bold',
+        spaceAfter=2,
+        leading=14
+    ))
+    
+    styles.add(ParagraphStyle(
+        name='SubCabecalho',
+        parent=styles['Normal'],
+        fontSize=10,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1a5f9e'),
+        fontName='Helvetica',
+        spaceAfter=8,
+        leading=12
+    ))
+    
+    styles.add(ParagraphStyle(
         name='Titulo',
         parent=styles['Heading2'],
         fontSize=14,
@@ -298,14 +320,26 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     ))
     
     # ========================================
-    # TÍTULO (MODIFICADO)
+    # CABEÇALHO INSTITUCIONAL (NOVO)
+    # ========================================
+    
+    cabecalho1 = Paragraph("INSTITUTO DE PESOS E MEDIDAS IPEM/RJ", styles['CabecalhoInstitucional'])
+    elements.append(cabecalho1)
+    elements.append(Spacer(1, 0.1*cm))
+    
+    cabecalho2 = Paragraph("AUDITORIA INTERNA - AUDIT", styles['SubCabecalho'])
+    elements.append(cabecalho2)
+    elements.append(Spacer(1, 0.3*cm))
+    
+    # ========================================
+    # TÍTULO
     # ========================================
     
     titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
     elements.append(titulo)
     elements.append(Spacer(1, 0.2*cm))
     
-    # Número do processo em negrito (NOVO)
+    # Número do processo em negrito
     processo_negrito = Paragraph(f"<b>{dados['processo']}</b>", styles['ProcessoNegrito'])
     elements.append(processo_negrito)
     elements.append(Spacer(1, 0.3*cm))
@@ -668,4 +702,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.2 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
