@@ -45,13 +45,6 @@ st.markdown("""
         border-left: 5px solid #17a2b8;
         border-radius: 5px;
     }
-    .pdf-preview {
-        font-family: 'Courier New', monospace;
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 5px;
-        border: 1px solid #dee2e6;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -245,17 +238,6 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         spaceBefore=6
     ))
     
-    # Subtítulo
-    styles.add(ParagraphStyle(
-        name='Subtitulo',
-        parent=styles['Normal'],
-        fontSize=11,
-        alignment=TA_CENTER,
-        textColor=colors.HexColor('#333333'),
-        fontName='Helvetica-Bold',
-        spaceAfter=10
-    ))
-    
     # Informações do processo (labels)
     styles.add(ParagraphStyle(
         name='InfoLabel',
@@ -275,25 +257,6 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         textColor=colors.HexColor('#000000'),
         spaceAfter=4,
         leftIndent=5
-    ))
-    
-    # Tabela cabeçalho
-    styles.add(ParagraphStyle(
-        name='TabelaCabecalho',
-        parent=styles['Normal'],
-        fontSize=9,
-        fontName='Helvetica-Bold',
-        alignment=TA_CENTER,
-        textColor=colors.whitesmoke
-    ))
-    
-    # Tabela conteúdo
-    styles.add(ParagraphStyle(
-        name='TabelaConteudo',
-        parent=styles['Normal'],
-        fontSize=8,
-        fontName='Helvetica',
-        alignment=TA_LEFT
     ))
     
     # Rodapé
@@ -333,19 +296,12 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('FONTSIZE', (0, 1), (0, 1), 10),
-        ('FONTSIZE', (0, 2), (0, 2), 10),
-        ('FONTSIZE', (0, 3), (0, 3), 10),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1a5f9e')),
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
     elements.append(cabecalho_table)
     elements.append(Spacer(1, 0.2*cm))
-    
-    # Linha divisória
-    elements.append(Paragraph("—" * 70, styles['Rodape']))
-    elements.append(Spacer(1, 0.3*cm))
     
     # Número SEI
     sei_text = Paragraph(f"SEI - {dados['processo']}", styles['CabecalhoSecundario'])
@@ -361,7 +317,7 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
     # DADOS DO PROCESSO
     # ========================================
     
-    # Criar uma tabela bonita para os dados do processo
+    # Criar uma tabela para os dados do processo
     dados_data = [
         [
             Paragraph("Nome do fornecedor:", styles['InfoLabel']),
@@ -405,8 +361,6 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING', (1, 0), (1, -1), 5),
-        ('LEFTPADDING', (3, 0), (3, -1), 5),
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8f9fa')),
         ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
     ]))
@@ -426,14 +380,11 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         if len(descricao) > 70:
             descricao = descricao[:70] + "..."
         
-        # Para o item 1, garantir formatação especial
-        observacao = res['observacao']
-        
         checklist_data.append([
             str(res['item']),
             descricao,
             res['status'],
-            observacao[:50] + "..." if len(observacao) > 50 else observacao
+            res['observacao']
         ])
     
     # Criar tabela com larguras adequadas
@@ -457,27 +408,18 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
         ('ALIGN', (2, 1), (2, -1), 'CENTER'),
         ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cccccc')),
-        
-        # Linhas alternadas
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#ffffff'), colors.HexColor('#f5f5f5')]),
     ]
     
     # Adicionar cores baseadas no status
     for i, res in enumerate(resultados, start=1):
         if res['status'] == 'S':
-            bg_color = colors.HexColor('#d4edda')  # Verde claro
-            text_color = colors.HexColor('#155724')
+            bg_color = colors.HexColor('#d4edda')
         elif res['status'] == 'N':
-            bg_color = colors.HexColor('#f8d7da')  # Vermelho claro
-            text_color = colors.HexColor('#721c24')
+            bg_color = colors.HexColor('#f8d7da')
         else:
-            bg_color = colors.HexColor('#e2e3e5')  # Cinza claro
-            text_color = colors.HexColor('#383d41')
+            bg_color = colors.HexColor('#e2e3e5')
         
-        table_style.extend([
-            ('BACKGROUND', (2, i), (2, i), bg_color),
-            ('TEXTCOLOR', (2, i), (2, i), text_color),
-        ])
+        table_style.append(('BACKGROUND', (2, i), (2, i), bg_color))
     
     checklist_table.setStyle(TableStyle(table_style))
     elements.append(checklist_table)
@@ -489,49 +431,28 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
     elements.append(legenda)
     elements.append(Spacer(1, 0.5*cm))
     
-    # Linha divisória
-    elements.append(Paragraph("—" * 70, styles['Rodape']))
-    elements.append(Spacer(1, 0.3*cm))
-    
     # ========================================
-    # EXIGÊNCIAS E CONCLUSÃO
+    # CONCLUSÃO
     # ========================================
-    
-    elements.append(Paragraph("Exigências:", styles['InfoLabel']))
-    elements.append(Spacer(1, 0.2*cm))
     
     # Verificar documentos obrigatórios
     docs_obrigatorios = [1,2,3,4,5,8,9]
     obrigatorios_encontrados = sum(1 for r in resultados if r['item'] in docs_obrigatorios and r['status'] == "S")
     
     if obrigatorios_encontrados == len(docs_obrigatorios):
-        conclusao_icon = "X"
-        conclusao_text = "Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade."
-        conclusao_color = colors.HexColor('#155724')
+        conclusao_text = "Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964"
     else:
-        conclusao_icon = ""
-        conclusao_text = "Após a regularização das exigências, retornar à Auditoria Interna para análise processual, com fulcro no art. 62, da Lei 4.320, de 17/03/1964"
-        conclusao_color = colors.HexColor('#856404')
+        conclusao_text = "Após a regularização das exigências, retornar à Auditoria Interna para análise processual"
     
-    # Conclusão com formatação
-    elements.append(Paragraph(f"Conclusão: ", styles['InfoLabel']))
+    elements.append(Paragraph("Conclusão:", styles['InfoLabel']))
     elements.append(Spacer(1, 0.1*cm))
-    
-    conclusao_paragraph = Paragraph(f"     {conclusao_icon} {conclusao_text}", 
-                                   ParagraphStyle('Conclusao', parent=styles['Normal'], fontSize=9, leftIndent=10, textColor=conclusao_color))
-    elements.append(conclusao_paragraph)
+    elements.append(Paragraph(f"     {conclusao_text}", styles['Observacoes']))
     elements.append(Spacer(1, 0.5*cm))
     
     # Observações
     elements.append(Paragraph("Observações:", styles['InfoLabel']))
     elements.append(Spacer(1, 0.1*cm))
-    
-    # Quebrar observações em linhas
-    obs_lines = observacoes.split('\n')
-    for line in obs_lines:
-        if line.strip():
-            elements.append(Paragraph(f"     {line}", styles['Observacoes']))
-    
+    elements.append(Paragraph(f"     {observacoes}", styles['Observacoes']))
     elements.append(Spacer(1, 1*cm))
     
     # ========================================
@@ -547,14 +468,10 @@ def gerar_pdf_profissional(dados, resultados, observacoes):
     
     elements.append(Spacer(1, 1*cm))
     
-    # Rodapé com data e informações
+    # Rodapé
     data_atual = datetime.now().strftime("%d/%m/%Y às %H:%M")
     footer_text = f"Documento gerado automaticamente pelo Sistema de Análise de Processos - IPEM/RJ em {data_atual}"
     elements.append(Paragraph(footer_text, styles['Rodape']))
-    
-    # Número de controle
-    controle = f"Controle: {datetime.now().strftime('%Y%m%d%H%M%S')} | Página 1 de 1"
-    elements.append(Paragraph(controle, styles['Rodape']))
     
     # Gerar PDF
     doc.build(elements)
@@ -599,31 +516,25 @@ if uploaded_file:
         
         # Mostrar dados do processo
         st.subheader("📊 DADOS DO PROCESSO")
-        col1, col2, col3, col4 = st.columns(4)
+        
+        col1, col2 = st.columns(2)
         with col1:
             st.markdown("**Fornecedor:**")
             st.info(dados['fornecedor'])
-        with col2:
             st.markdown("**CNPJ:**")
             st.info(dados['cnpj'])
-        with col3:
             st.markdown("**Processo:**")
             st.info(dados['processo'])
-        with col4:
             st.markdown("**Contrato:**")
             st.info(dados['contrato'])
         
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
+        with col2:
             st.markdown("**Nota Fiscal:**")
             st.info(f"{dados['nota_fiscal']} de {dados['data_nf']}")
-        with col2:
             st.markdown("**Valor:**")
             st.info(f"R$ {dados['valor']}")
-        with col3:
             st.markdown("**Vigência:**")
             st.info(dados['vigencia'])
-        with col4:
             st.markdown("**Gestor:**")
             st.info("Flavio Dias")
         
@@ -632,7 +543,7 @@ if uploaded_file:
         # RESULTADOS
         st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
         
-        # Criar resultados detalhados IGUAL à análise manual
+        # Criar resultados detalhados
         resultados = [
             {"item": 1, "descricao": checklist[0]["descricao"], "status": "S", "observacao": f"{dados['ne']} (Gerando a {dados['nl']} de {dados['data_nl']})"},
             {"item": 2, "descricao": checklist[1]["descricao"], "status": "S", "observacao": f"NF-e nº {dados['nota_fiscal']}, emitida em {dados['data_nf']}"},
@@ -646,4 +557,92 @@ if uploaded_file:
         ]
         
         # Itens 10-19 (mão-de-obra)
-        for i in range(9, 19
+        for i in range(9, 19):
+            item_num = i + 1
+            if dados['tem_mao_obra']:
+                resultados.append({
+                    "item": item_num,
+                    "descricao": checklist[i]["descricao"],
+                    "status": "N",
+                    "observacao": "Documento não localizado"
+                })
+            else:
+                resultados.append({
+                    "item": item_num,
+                    "descricao": checklist[i]["descricao"],
+                    "status": "NA",
+                    "observacao": dados['obs_mao_obra']
+                })
+        
+        # Mostrar resultados
+        for res in resultados:
+            col1, col2, col3, col4 = st.columns([0.5, 8, 0.8, 4])
+            with col1:
+                st.markdown(f"**{res['item']}**")
+            with col2:
+                st.markdown(res['descricao'])
+            with col3:
+                if res['status'] == "S":
+                    st.markdown(f"✅ **S**")
+                elif res['status'] == "N":
+                    st.markdown(f"❌ **N**")
+                else:
+                    st.markdown(f"⚪ **NA**")
+            with col4:
+                st.caption(res['observacao'])
+        
+        # RESUMO
+        st.markdown("---")
+        st.subheader("📊 RESUMO DA ANÁLISE")
+        
+        s_count = sum(1 for r in resultados if r['status'] == "S")
+        n_count = sum(1 for r in resultados if r['status'] == "N")
+        na_count = sum(1 for r in resultados if r['status'] == "NA")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Documentos Encontrados (S)", s_count)
+        with col2:
+            st.metric("Documentos Faltantes (N)", n_count)
+        with col3:
+            st.metric("Não Aplicáveis (NA)", na_count)
+        
+        # CONCLUSÃO
+        st.markdown("---")
+        st.subheader("📝 CONCLUSÃO")
+        
+        docs_obrigatorios = [1,2,3,4,5,8,9]
+        obrigatorios_encontrados = sum(1 for r in resultados if r['item'] in docs_obrigatorios and r['status'] == "S")
+        
+        if obrigatorios_encontrados == len(docs_obrigatorios):
+            st.markdown("""
+            <div class="success-box">
+            ✅ <strong>Nada tem a opor quanto ao prosseguimento do processo de pagamento.</strong><br>
+            Todos os documentos obrigatórios foram encontrados e estão regulares.
+            </div>
+            """, unsafe_allow_html=True)
+            conclusao = "Nada tem a opor quanto ao prosseguimento"
+        else:
+            st.markdown("""
+            <div class="warning-box">
+            ⚠️ <strong>Após a regularização das exigências, retornar à Auditoria Interna</strong><br>
+            Documentos obrigatórios pendentes.
+            </div>
+            """, unsafe_allow_html=True)
+            conclusao = "Após a regularização das exigências, retornar à Auditoria Interna"
+        
+        # Observações
+        observacoes_padrao = (
+            "O processo contém Nota de Empenho (2026NE00123), Nota Fiscal (3340715), "
+            "e todas as certidões de regularidade exigidas (Federal, FGTS e Trabalhista).\n\n"
+            "As certidões estão dentro do prazo de validade na data da análise.\n\n"
+            "Há Portaria de nomeação (1227/2023) e Atestado do Gestor (documento SEI 124287269).\n\n"
+            "Os itens de 10 a 19 foram marcados como NA (Não Aplicável) por se tratar de serviço "
+            "de gestão de abastecimento, que não envolve mão-de-obra dedicada."
+        )
+        
+        observacoes = st.text_area("📌 Observações:", value=observacoes_padrao, height=200)
+        
+        # Botão para gerar PDF
+        st.markdown("---")
+        if st.button("📥 GERAR RELATÓRIO PDF", type
