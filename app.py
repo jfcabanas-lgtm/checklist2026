@@ -9,9 +9,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
-import base64
 
-# Configuração da página
 st.set_page_config(
     page_title="Análise IPEM-RJ",
     page_icon="✅",
@@ -50,113 +48,151 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Cabeçalho
 st.markdown('<div class="main-header"><h1>📋 ANÁLISE DE PROCESSO DE PAGAMENTO - IPEM/RJ</h1></div>', unsafe_allow_html=True)
 
-# Checklist COMPLETO com palavras-chave melhoradas
+# Checklist completo com palavras-chave
 checklist = [
     {"item": 1, "descricao": "Nota de empenho e demonstrativo de saldo (art. 63, §1°, II, da Lei 4320/64)", 
-     "palavras": ["nota de empenho", "empenho", "demonstrativo de saldo", "saldo", "ne", "empenhada"],
-     "peso": 1},
+     "palavras": ["nota de empenho", "empenho", "demonstrativo de saldo", "saldo", "ne", "empenhada", "nota de liquidação", "nl"],
+     "tipo": "obrigatorio"},
     
     {"item": 2, "descricao": "Nota Fiscal em nome do IPEM, de acordo com o empenho e com o objeto", 
      "palavras": ["nota fiscal", "nf", "fatura", "ipem", "nota fiscal de serviço", "nfs"],
-     "peso": 1},
+     "tipo": "obrigatorio"},
     
     {"item": 3, "descricao": "Certidão de regularidade relativo aos tributos federais e dívida ativa da União", 
      "palavras": ["certidao federal", "receita federal", "divida ativa", "tributos federais", "certidao conjunta"],
-     "peso": 2},
+     "tipo": "obrigatorio"},
     
     {"item": 4, "descricao": "Certidão de regularidade junto ao FGTS", 
      "palavras": ["certidao fgts", "fgts", "regularidade fgts", "cnd fgts", "certidao de regularidade do fgts"],
-     "peso": 2},
+     "tipo": "obrigatorio"},
     
     {"item": 5, "descricao": "Certidão de regularidade junto a Justiça do Trabalho", 
      "palavras": ["certidao trabalho", "justica do trabalho", "trabalhista", "cnd trabalhista", "certidao trabalhista"],
-     "peso": 2},
+     "tipo": "obrigatorio"},
     
     {"item": 6, "descricao": "No caso de incidir tributos a serem retidos da fonte, consta indicação?", 
      "palavras": ["tributos retidos", "retencao", "fonte", "irrf", "pis", "cofins", "cssl"],
-     "peso": 1},
+     "tipo": "condicional"},
     
     {"item": 7, "descricao": "Quando não incidir tributos, há documento de comprovação da não incidência?", 
      "palavras": ["nao incidencia", "isencao", "imunidade", "dispensa", "nao retencao"],
-     "peso": 1},
+     "tipo": "condicional"},
     
     {"item": 8, "descricao": "Portaria de Nomeação de Fiscalização", 
      "palavras": ["portaria", "nomeacao", "fiscal", "gapre", "designacao", "portaria de nomeacao"],
-     "peso": 1},
+     "tipo": "obrigatorio"},
     
-    {"item": 9, "descricao": "Atestado do Gestor do contrato", 
+    {"item": 9, "descricao": "Atestado do Gestor do contrato de que os serviços ou aquisições contratados foram prestados a contento", 
      "palavras": ["atestado", "gestor", "liquidacao", "servicos prestados", "a contento", "atestado de liquidacao"],
-     "peso": 1},
+     "tipo": "obrigatorio"},
     
     {"item": 10, "descricao": "Relação dos funcionários que executaram o serviço", 
      "palavras": ["relacao funcionarios", "relacao de empregados", "funcionarios", "equipe", "lista de funcionarios"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 11, "descricao": "Comprovante da GFIP", 
      "palavras": ["gfip", "guia fgts", "conectividade social", "sefp", "fgts digital"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 12, "descricao": "Comprovante de pagamento do INSS", 
      "palavras": ["inss", "guia inss", "gps", "previdencia", "guia da previdencia"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 13, "descricao": "Comprovante de pagamento do FGTS", 
      "palavras": ["fgts", "guia fgts", "recolhimento fgts", "comprovante fgts"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 14, "descricao": "Protocolo do envio dos arquivos - Conectividade Social", 
      "palavras": ["conectividade social", "protocolo", "transmissao", "conectividade", "recibo de entrega"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 15, "descricao": "Folha de pagamento", 
      "palavras": ["folha de pagamento", "folha", "payroll", "holerite", "folha salarial"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 16, "descricao": "Comprovante de pagamento dos salários", 
      "palavras": ["comprovante salario", "recibo salario", "holerite", "contracheque", "recibo de pagamento"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 17, "descricao": "Comprovante de pagamento do Vale transporte", 
      "palavras": ["vale transporte", "vt", "vale transport", "comprovante vt"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 18, "descricao": "Comprovante de pagamento do Vale alimentação / refeição", 
      "palavras": ["vale alimentacao", "va", "vale refeicao", "vr", "alimentacao", "vale refeição"],
-     "peso": 1},
+     "tipo": "mao_obra"},
     
     {"item": 19, "descricao": "Comprovante de pagamento de rescisão e FGTS", 
      "palavras": ["rescisao", "fgts rescisorio", "termino de contrato", "demissao", "verbas rescisorias"],
-     "peso": 1}
+     "tipo": "mao_obra"}
 ]
 
 # Função para extrair fornecedor
 def extrair_fornecedor(texto):
-    # Padrões comuns para nome de fornecedor
     padroes = [
         r'(?:fornecedor|empresa|contratada|razao social)[:\s]+([A-Z][A-Z\s.]+)',
         r'(?:razao social|denominacao)[:\s]+([A-Z][A-Z\s.]+)',
         r'([A-Z][A-Z\s]+(?:LTDA|Ltda|ME|EIRELI|SA|S/A))'
     ]
-    
     for padrao in padroes:
-        match = re.search(padrao, texto)
+        match = re.search(padrao, texto, re.IGNORECASE)
         if match:
             return match.group(1).strip()
     return "Não identificado"
 
+# Função para extrair nota de empenho e liquidação (VINCULADA)
+def extrair_ne_nl(texto):
+    """
+    Extrai e vincula automaticamente a Nota de Empenho com a Nota de Liquidação
+    Formato: 2026NE00123 (Gerando a 2026NL00118 de 05/03/2026)
+    """
+    # Padrões para encontrar Nota de Empenho
+    ne_pattern = r'2026NE\d{5}'
+    ne_matches = re.findall(ne_pattern, texto)
+    
+    # Padrões para encontrar Nota de Liquidação
+    nl_pattern = r'2026NL\d{5}'
+    nl_matches = re.findall(nl_pattern, texto)
+    
+    # Se encontrou ambos
+    if ne_matches and nl_matches:
+        ne = ne_matches[0]  # Pega o primeiro NE encontrado
+        
+        # Tentar encontrar data da liquidação
+        data_pattern = r'2026NL\d{5}.*?(\d{2}/\d{2}/\d{4})'
+        data_match = re.search(data_pattern, texto, re.DOTALL)
+        data = data_match.group(1) if data_match else "data não encontrada"
+        
+        # Procurar todas as NLs para ver qual está mais próxima da NE no texto
+        melhor_nl = nl_matches[0]  # Pega a primeira por padrão
+        
+        # Tentar encontrar contexto onde NE e NL aparecem juntas
+        contexto_pattern = fr'{ne}.*?({nl_pattern})'
+        contexto_match = re.search(contexto_pattern, texto, re.DOTALL)
+        if contexto_match:
+            melhor_nl = contexto_match.group(1)
+        
+        return f"{ne} (Gerando a {melhor_nl} de {data})"
+    
+    # Se só encontrou NE
+    elif ne_matches:
+        return ne_matches[0]
+    
+    # Se não encontrou nada
+    else:
+        return "Não identificado"
+
 # Função para extrair data de validade de certidões
 def extrair_validade_certidao(texto, tipo):
     padroes = [
-        r'(?:certidao\s*(?:federal|fgts|trabalho).*?validade[:\s]*(\d{2}/\d{2}/\d{4}))',
         r'validade[:\s]*(\d{2}/\d{2}/\d{4})',
-        r'valido[:\s]*ate[:\s]*(\d{2}/\d{2}/\d{4})'
+        r'valido[:\s]*ate[:\s]*(\d{2}/\d{2}/\d{4})',
+        r'válida[:\s]*até[:\s]*(\d{2}/\d{2}/\d{4})'
     ]
-    
     for padrao in padroes:
-        match = re.search(padrao, texto, re.IGNORECASE | re.DOTALL)
+        match = re.search(padrao, texto, re.IGNORECASE)
         if match:
             return match.group(1)
     return None
@@ -252,11 +288,22 @@ def gerar_pdf_resultados(dados_processo, resultados_checklist, conclusao_texto, 
     checklist_data = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
     
     for res in resultados_checklist:
+        # Quebrar descrição longa
+        descricao = res['descricao']
+        if len(descricao) > 70:
+            descricao = descricao[:70] + "..."
+        
+        # Para o item 1, garantir que a observação mostre a vinculação NE → NL
+        observacao = res['observacao']
+        if res['item'] == 1 and 'Gerando a' in observacao:
+            # Mantém o formato especial
+            pass
+        
         checklist_data.append([
             str(res['item']),
-            res['descricao'],
+            descricao,
             res['status'],
-            res['observacao']
+            observacao
         ])
     
     checklist_table = Table(checklist_data, colWidths=[1.2*cm, 10*cm, 1.5*cm, 4*cm])
@@ -268,13 +315,28 @@ def gerar_pdf_resultados(dados_processo, resultados_checklist, conclusao_texto, 
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(checklist_table)
+    elements.append(Spacer(1, 0.5*cm))
+    
+    # Legenda
+    elements.append(Paragraph("S = Sim ; N = Não ; N.A. = Não Aplicável", 
+                             ParagraphStyle('Legenda', parent=styles['Normal'], fontSize=8)))
     elements.append(Spacer(1, 0.5*cm))
     
     # Conclusão
     elements.append(Paragraph(f"Conclusão: {conclusao_texto}", styles['Normal']))
     elements.append(Spacer(1, 0.3*cm))
+    
+    # Texto da conclusão detalhado
+    if "Nada tem a opor" in conclusao_texto:
+        conclusao_final = "X Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade."
+    else:
+        conclusao_final = "Após a regularização das exigências, retornar à Auditoria Interna para análise processual, com fulcro no art. 62, da Lei 4.320, de 17/03/1964"
+    
+    elements.append(Paragraph(f"     {conclusao_final}", styles['Normal']))
+    elements.append(Spacer(1, 0.5*cm))
     
     # Observações
     elements.append(Paragraph(f"Observações: {observacoes}", styles['Normal']))
@@ -288,7 +350,8 @@ def gerar_pdf_resultados(dados_processo, resultados_checklist, conclusao_texto, 
     
     # Rodapé
     elements.append(Spacer(1, 0.5*cm))
-    footer = Paragraph(f"Relatório gerado em {datetime.now().strftime('%d/%m/%Y %H:%M')}", 
+    data_atual = datetime.now().strftime("%d/%m/%Y %H:%M")
+    footer = Paragraph(f"Relatório gerado automaticamente em {data_atual}", 
                       ParagraphStyle('Footer', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.grey))
     elements.append(footer)
     
@@ -298,7 +361,7 @@ def gerar_pdf_resultados(dados_processo, resultados_checklist, conclusao_texto, 
     
     return pdf_bytes
 
-# Sidebar com informações e login
+# Sidebar com login
 with st.sidebar:
     st.markdown("### 🏛️ GOVERNO DO ESTADO DO RIO DE JANEIRO")
     st.markdown("**Secretaria da Casa Civil**")
@@ -306,7 +369,6 @@ with st.sidebar:
     st.markdown("**Auditoria Interna**")
     st.markdown("---")
     
-    # Login simples
     if 'autenticado' not in st.session_state:
         st.session_state.autenticado = False
     
@@ -314,7 +376,7 @@ with st.sidebar:
         st.markdown("### 🔐 Acesso Restrito")
         senha = st.text_input("Digite a senha:", type="password")
         if st.button("Entrar"):
-            if senha == "ipem2024":  # Senha simples - pode alterar
+            if senha == "ipem2024":
                 st.session_state.autenticado = True
                 st.rerun()
             else:
@@ -333,9 +395,8 @@ with st.sidebar:
     st.markdown("---")
     st.caption(f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-# Área principal - só mostra se autenticado
+# Área principal
 if st.session_state.autenticado:
-    # Upload do arquivo
     uploaded_file = st.file_uploader("📤 Selecione o PDF do processo", type=['pdf'])
     
     if uploaded_file:
@@ -358,27 +419,23 @@ if st.session_state.autenticado:
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                # Fornecedor
                 dados_processo['fornecedor'] = extrair_fornecedor(texto_completo)
                 st.markdown("**Fornecedor:**")
                 st.info(dados_processo['fornecedor'])
             
             with col2:
-                # CNPJ
                 cnpj = re.search(r'\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}', texto_completo)
                 dados_processo['cnpj'] = cnpj.group() if cnpj else "Não identificado"
                 st.markdown("**CNPJ:**")
                 st.info(dados_processo['cnpj'])
             
             with col3:
-                # Processo/SEI
-                processo = re.search(r'(?:processo|sei)[:\s]*(\d+[.-]?\d*[.-]?\d*)', texto_lower)
+                processo = re.search(r'(?:processo|sei)[:\s]*([\d/-]+)', texto_lower)
                 dados_processo['processo'] = processo.group(1) if processo else "Não identificado"
                 st.markdown("**Processo/SEI:**")
                 st.info(dados_processo['processo'])
             
             with col4:
-                # Fiscal
                 fiscal = re.search(r'(?:fiscal|gestor)[:\s]*([A-Z][A-Z\s]+)', texto_completo)
                 dados_processo['fiscal'] = fiscal.group(1).strip() if fiscal else "Não identificado"
                 st.markdown("**Fiscal:**")
@@ -387,34 +444,29 @@ if st.session_state.autenticado:
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                # Nota Fiscal
-                nf = re.search(r'(?:nota fiscal|nf)[:\s]*n[º°]?\s*(\d+)', texto_lower)
+                nf = re.search(r'(?:nota fiscal|nf)[:\s]*[nº°]?\s*(\d+)', texto_lower)
                 dados_processo['nota_fiscal'] = nf.group(1) if nf else "Não identificado"
                 st.markdown("**Nota Fiscal:**")
                 st.info(dados_processo['nota_fiscal'])
             
             with col2:
-                # Valor
                 valor = re.search(r'valor[:\s]*R?\$?\s*([\d.,]+)', texto_lower)
                 dados_processo['valor'] = valor.group(1) if valor else "0,00"
                 st.markdown("**Valor:**")
                 st.info(f"R$ {dados_processo['valor']}")
             
             with col3:
-                # Vigência
                 vigencia = re.search(r'vig[êe]ncia[:\s]*(\d{2}/\d{2}/\d{4})', texto_lower)
                 dados_processo['vigencia'] = vigencia.group(1) if vigencia else "Não identificado"
                 st.markdown("**Vigência:**")
                 st.info(dados_processo['vigencia'])
             
             with col4:
-                # Vencimento
                 venc = re.search(r'vencimento[:\s]*(\d{2}/\d{2}/\d{4})', texto_lower)
                 dados_processo['vencimento'] = venc.group(1) if venc else "Não identificado"
                 st.markdown("**Vencimento:**")
                 st.info(dados_processo['vencimento'])
             
-            # Objeto do contrato
             objeto = re.search(r'(?:objeto|contrato)[:\s]*([^\n]+)', texto_completo)
             dados_processo['objeto'] = objeto.group(1).strip() if objeto else "Extraído do processo"
             
@@ -425,7 +477,10 @@ if st.session_state.autenticado:
             tem_mao_obra = any(palavra in texto_lower for palavra in palavras_mao_obra)
             
             if tem_mao_obra:
-                st.markdown('<div class="info-box">🔧 Serviço com mão-de-obra identificado - itens 10 a 19 serão verificados</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-box">🔧 Serviço com mão-de-obra identificado</div>', unsafe_allow_html=True)
+            
+            # EXTRAIR NOTA DE EMPENHO E LIQUIDAÇÃO VINCULADAS
+            ne_nl_vinculadas = extrair_ne_nl(texto_completo)
             
             # RESULTADO DA ANÁLISE
             st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
@@ -438,7 +493,7 @@ if st.session_state.autenticado:
                     status = "NA"
                     observacao = "Sem mão-de-obra"
                 else:
-                    # Buscar palavras com peso
+                    # Buscar palavras no texto
                     palavras_encontradas = []
                     for palavra in doc['palavras']:
                         if palavra in texto_lower:
@@ -446,15 +501,41 @@ if st.session_state.autenticado:
                     
                     if palavras_encontradas:
                         status = "S"
-                        # Verificar validade para certidões
-                        if doc['item'] in [3,4,5]:
+                        
+                        # TRATAMENTO ESPECIAL PARA O ITEM 1
+                        if doc['item'] == 1:
+                            if ne_nl_vinculadas != "Não identificado":
+                                observacao = ne_nl_vinculadas
+                            else:
+                                observacao = "Documento encontrado"
+                        
+                        # Certidões (itens 3,4,5)
+                        elif doc['item'] in [3,4,5]:
                             validade = extrair_validade_certidao(texto_lower, doc['item'])
                             if validade:
                                 observacao = f"Válida até: {validade}"
                             else:
                                 observacao = "Documento encontrado"
+                        
+                        # Portaria (item 8)
+                        elif doc['item'] == 8:
+                            portaria = re.search(r'portaria[:\s]*(\d+/\d{4})', texto_lower)
+                            if portaria:
+                                observacao = f"Portaria {portaria.group(1)}"
+                            else:
+                                observacao = "Documento encontrado"
+                        
+                        # Atestado (item 9)
+                        elif doc['item'] == 9:
+                            sei = re.search(r'sei[:\s]*(\d+)', texto_lower)
+                            if sei:
+                                observacao = f"Documento SEI {sei.group(1)}"
+                            else:
+                                observacao = "Documento encontrado"
+                        
+                        # Outros documentos
                         else:
-                            observacao = "Encontrado"
+                            observacao = "Documento encontrado"
                     else:
                         status = "N"
                         observacao = "Não localizado"
@@ -492,11 +573,11 @@ if st.session_state.autenticado:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Documentos Encontrados (S)", s_count, delta=None)
+                st.metric("Documentos Encontrados (S)", s_count)
             with col2:
-                st.metric("Documentos Faltantes (N)", n_count, delta=None)
+                st.metric("Documentos Faltantes (N)", n_count)
             with col3:
-                st.metric("Não Aplicáveis (NA)", na_count, delta=None)
+                st.metric("Não Aplicáveis (NA)", na_count)
             
             # CONCLUSÃO
             st.markdown("---")
@@ -506,13 +587,12 @@ if st.session_state.autenticado:
             obrigatorios_encontrados = sum(1 for r in resultados if r['item'] in docs_obrigatorios and r['status'] == "S")
             
             if obrigatorios_encontrados == len(docs_obrigatorios):
-                conclusao = "Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320/64"
-                st.markdown(f'<div class="success-box">✅ {conclusao}</div>', unsafe_allow_html=True)
+                conclusao = "Nada tem a opor quanto ao prosseguimento"
+                st.markdown(f'<div class="success-box">✅ {conclusao}, com fulcro no art. 62, da Lei 4.320/64</div>', unsafe_allow_html=True)
             else:
                 conclusao = "Após a regularização das exigências, retornar à Auditoria Interna para análise processual"
                 st.markdown(f'<div class="warning-box">⚠️ {conclusao}</div>', unsafe_allow_html=True)
             
-            # Observações
             observacoes = st.text_area("📌 Observações:", 
                                       value=f"Despesa referente a {datetime.now().strftime('%m/%Y')}.", 
                                       height=100)
@@ -532,7 +612,6 @@ if st.session_state.autenticado:
                     )
                     st.balloons()
             
-            # Mostrar texto completo
             with st.expander("📄 Ver texto extraído do PDF"):
                 st.text(texto_completo[:5000] + "...")
     
@@ -546,4 +625,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v2.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v3.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
