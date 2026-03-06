@@ -142,35 +142,50 @@ def extrair_dados_completos(texto):
     dados['sei_liquidacao'] = sei_liquidacao_match.group() if sei_liquidacao_match else "126352677"
     
     # ============================================
-    # CERTIDÃO FEDERAL - ITEM 3 (MODIFICADO)
+    # CERTIDÃO FEDERAL - ITEM 3
     # ============================================
-    # Busca pela expressão "Valida até" ou "Válida até" (com ou sem acento)
-    cert_federal_validade_match = re.search(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    if cert_federal_validade_match:
-        dados['cert_federal_validade'] = cert_federal_validade_match.group(1)
+    # Busca por TODAS as ocorrências de "Valida até" ou "Válida até"
+    cert_federal_datas = re.findall(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    
+    if cert_federal_datas:
+        # Pega a data mais recente (última encontrada)
+        dados['cert_federal_validade'] = cert_federal_datas[-1]
         dados['cert_federal_origem'] = "expressão 'Valida até'"
     else:
         # Fallback: tentar encontrar data de emissão
-        emissao_match = re.search(r'emitida[:\s]*.*?(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-        if emissao_match:
-            dados['cert_federal_validade'] = emissao_match.group(1)
+        emissao_datas = re.findall(r'emitida[:\s]*.*?(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+        if emissao_datas:
+            dados['cert_federal_validade'] = emissao_datas[-1]
             dados['cert_federal_origem'] = "data de emissão"
         else:
             dados['cert_federal_validade'] = "01/08/2026"
             dados['cert_federal_origem'] = "padrão"
     
-    # 17. CERTIDÃO FGTS - Datas
-    cert_fgts_validade_match = re.search(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    if cert_fgts_validade_match:
-        dados['cert_fgts_inicio'] = cert_fgts_validade_match.group(1)
-        dados['cert_fgts_fim'] = cert_fgts_validade_match.group(2)
+    # ============================================
+    # CERTIDÃO FGTS - ITEM 4
+    # ============================================
+    # Busca por TODAS as ocorrências de CRF (validade)
+    cert_fgts_datas = re.findall(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    
+    if cert_fgts_datas:
+        # Pega a mais recente (última encontrada)
+        dados['cert_fgts_inicio'] = cert_fgts_datas[-1][0]
+        dados['cert_fgts_fim'] = cert_fgts_datas[-1][1]
     else:
         dados['cert_fgts_inicio'] = "27/01/2026"
         dados['cert_fgts_fim'] = "25/02/2026"
     
-    # 18. CERTIDÃO TRABALHISTA - Data de validade
-    cert_trab_validade_match = re.search(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    dados['cert_trab_validade'] = cert_trab_validade_match.group(1) if cert_trab_validade_match else "01/08/2026"
+    # ============================================
+    # CERTIDÃO TRABALHISTA - ITEM 5
+    # ============================================
+    # Busca por TODAS as ocorrências de validade da certidão trabalhista
+    cert_trab_datas = re.findall(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    
+    if cert_trab_datas:
+        # Pega a data mais recente (última encontrada)
+        dados['cert_trab_validade'] = cert_trab_datas[-1]
+    else:
+        dados['cert_trab_validade'] = "01/08/2026"
     
     # 19. DISPENSA RETENÇÃO (Item 7)
     dispensa_match = re.search(r'DISPENSA RETENÇÃO P/ PREVIDÊNCIA SOCIAL \(INSS\) ART\. 126, CAPUT, DA IN RFB 971/2009 / ART\. 108\. IN RFB 2110/2022', texto, re.IGNORECASE)
@@ -479,12 +494,12 @@ if st.session_state.autenticado:
             # Verificar validade das certidões
             data_atual = datetime.now()
             
-            # Certidão Federal (Item 3) - COM A NOVA LÓGICA
+            # Certidão Federal (Item 3)
             federal_valida, federal_data = verificar_validade(dados['cert_federal_validade'])
             if federal_valida and federal_data < data_atual:
-                cert_federal_obs = f"❌ CERTIDÃO VENCIDA em {dados['cert_federal_validade']} - Necessário atualizar"
+                cert_federal_obs = f"❌ CERTIDÃO FEDERAL VENCIDA em {dados['cert_federal_validade']} - Necessário atualizar"
             else:
-                cert_federal_obs = f"Válida até {dados['cert_federal_validade']}"
+                cert_federal_obs = f"Certidão Federal válida até {dados['cert_federal_validade']}"
             
             # Certidão FGTS (Item 4)
             fgts_valida, fgts_data = verificar_validade(dados['cert_fgts_fim'])
@@ -628,4 +643,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v4.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v5.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
