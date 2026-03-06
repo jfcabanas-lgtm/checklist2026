@@ -250,15 +250,15 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica',
-        spaceAfter=8,
+        spaceAfter=4,  # REDUZIDO de 8 para 4
         leading=12
     ))
     
-    # TÍTULO COM FONTE REDUZIDA (de 14 para 12)
+    # TÍTULO COM FONTE REDUZIDA
     styles.add(ParagraphStyle(
         name='Titulo',
         parent=styles['Heading2'],
-        fontSize=12,  # REDUZIDO
+        fontSize=12,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
@@ -330,10 +330,10 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     
     cabecalho2 = Paragraph("AUDITORIA INTERNA - AUDIT", styles['SubCabecalho'])
     elements.append(cabecalho2)
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.1*cm))  # ESPAÇO REDUZIDO de 0.3cm para 0.1cm
     
     # ========================================
-    # TÍTULO (COM FONTE REDUZIDA)
+    # TÍTULO
     # ========================================
     
     titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
@@ -703,4 +703,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.3 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.4 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
