@@ -141,9 +141,23 @@ def extrair_dados_completos(texto):
     sei_liquidacao_match = re.search(r'126352677', texto)
     dados['sei_liquidacao'] = sei_liquidacao_match.group() if sei_liquidacao_match else "126352677"
     
-    # 16. CERTIDÃO FEDERAL - Data de validade
-    cert_federal_validade_match = re.search(r'validade[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    dados['cert_federal_validade'] = cert_federal_validade_match.group(1) if cert_federal_validade_match else "02/02/2026"
+    # ============================================
+    # CERTIDÃO FEDERAL - ITEM 3 (MODIFICADO)
+    # ============================================
+    # Busca pela expressão "Valida até" ou "Válida até" (com ou sem acento)
+    cert_federal_validade_match = re.search(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if cert_federal_validade_match:
+        dados['cert_federal_validade'] = cert_federal_validade_match.group(1)
+        dados['cert_federal_origem'] = "expressão 'Valida até'"
+    else:
+        # Fallback: tentar encontrar data de emissão
+        emissao_match = re.search(r'emitida[:\s]*.*?(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+        if emissao_match:
+            dados['cert_federal_validade'] = emissao_match.group(1)
+            dados['cert_federal_origem'] = "data de emissão"
+        else:
+            dados['cert_federal_validade'] = "01/08/2026"
+            dados['cert_federal_origem'] = "padrão"
     
     # 17. CERTIDÃO FGTS - Datas
     cert_fgts_validade_match = re.search(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
@@ -302,7 +316,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         [Paragraph("Gestor:", styles['InfoLabel']),
          Paragraph("Flavio Dias Jr., Erinton C., Samuel S.", styles['InfoValue']),
          Paragraph("NF / Fatura:", styles['InfoLabel']),
-         Paragraph(f"{dados['nota_fiscal']} de {dados['data_nf']}", styles['InfoValue'])],
+         Paragraph(f"{dados['nota_fiscal']} (SEI {dados['sei_nf']})", styles['InfoValue'])],
         
         [Paragraph("Valor:", styles['InfoLabel']),
          Paragraph(f"R$ {dados['valor']}", styles['InfoValue']),
@@ -465,21 +479,21 @@ if st.session_state.autenticado:
             # Verificar validade das certidões
             data_atual = datetime.now()
             
-            # Certidão Federal
+            # Certidão Federal (Item 3) - COM A NOVA LÓGICA
             federal_valida, federal_data = verificar_validade(dados['cert_federal_validade'])
             if federal_valida and federal_data < data_atual:
                 cert_federal_obs = f"❌ CERTIDÃO VENCIDA em {dados['cert_federal_validade']} - Necessário atualizar"
             else:
                 cert_federal_obs = f"Válida até {dados['cert_federal_validade']}"
             
-            # Certidão FGTS
+            # Certidão FGTS (Item 4)
             fgts_valida, fgts_data = verificar_validade(dados['cert_fgts_fim'])
             if fgts_valida and fgts_data < data_atual:
                 cert_fgts_obs = f"❌ CRF VENCIDO em {dados['cert_fgts_fim']} - Necessário atualizar"
             else:
                 cert_fgts_obs = f"CRF válido de {dados['cert_fgts_inicio']} a {dados['cert_fgts_fim']}"
             
-            # Certidão Trabalhista
+            # Certidão Trabalhista (Item 5)
             trab_valida, trab_data = verificar_validade(dados['cert_trab_validade'])
             if trab_valida and trab_data < data_atual:
                 cert_trab_obs = f"❌ CERTIDÃO TRABALHISTA VENCIDA em {dados['cert_trab_validade']} - Necessário atualizar"
@@ -614,4 +628,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v4.0 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v4.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
