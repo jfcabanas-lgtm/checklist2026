@@ -254,10 +254,11 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
         leading=12
     ))
     
+    # TÍTULO COM FONTE REDUZIDA (de 14 para 12)
     styles.add(ParagraphStyle(
         name='Titulo',
         parent=styles['Heading2'],
-        fontSize=14,
+        fontSize=12,  # REDUZIDO
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
@@ -320,7 +321,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     ))
     
     # ========================================
-    # CABEÇALHO INSTITUCIONAL (NOVO)
+    # CABEÇALHO INSTITUCIONAL
     # ========================================
     
     cabecalho1 = Paragraph("INSTITUTO DE PESOS E MEDIDAS IPEM/RJ", styles['CabecalhoInstitucional'])
@@ -332,7 +333,7 @@ def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto)
     elements.append(Spacer(1, 0.3*cm))
     
     # ========================================
-    # TÍTULO
+    # TÍTULO (COM FONTE REDUZIDA)
     # ========================================
     
     titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
@@ -702,4 +703,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.2 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v6.3 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
