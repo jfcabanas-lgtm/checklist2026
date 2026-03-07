@@ -74,127 +74,204 @@ checklist = [
 ]
 
 # ============================================
-# FUNÇÕES DE EXTRAÇÃO DETALHADA
+# FUNÇÕES DE EXTRAÇÃO DE SEIS POR DOCUMENTO
 # ============================================
 
-def extrair_dados_completos(texto):
-    """Extrai TODAS as informações relevantes do PDF"""
-    dados = {}
-    texto_lower = texto.lower()
+def extrair_todos_seis(texto):
+    """
+    Extrai TODOS os números SEI (8-9 dígitos) do documento
+    Retorna um dicionário com os SEIs classificados por tipo de documento
+    """
+    seis = {}
     
-    # 1. FORNECEDOR
-    fornecedor_match = re.search(r'PRIME CONSULTORIA E ASSESSORIA EMPRESARIAL LTDA', texto, re.IGNORECASE)
-    dados['fornecedor'] = fornecedor_match.group() if fornecedor_match else "PRIME CONSULTORIA E ASSESSORIA EMPRESARIAL LTDA"
+    # Encontrar todos os números de 8-9 dígitos (padrão SEI)
+    todos_seis = re.findall(r'\b(\d{8,9})\b', texto)
     
-    # 2. CNPJ
-    cnpj_match = re.search(r'05\.340\.639/0001-30', texto)
-    dados['cnpj'] = cnpj_match.group() if cnpj_match else "05.340.639/0001-30"
+    # 1. SEI da Nota Fiscal
+    seis_nf = re.findall(r'(?:nota fiscal|nf).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['nota_fiscal'] = list(set(seis_nf)) if seis_nf else []
     
-    # 3. PROCESSO
-    processo_match = re.search(r'SEI-150014/000158/2026', texto)
-    dados['processo'] = processo_match.group() if processo_match else "SEI-150014/000158/2026"
+    # 2. SEI do Atestado
+    seis_atestado = re.findall(r'(?:atestado|realização dos serviços).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['atestado'] = list(set(seis_atestado)) if seis_atestado else []
     
-    # 4. CONTRATO
-    contrato_match = re.search(r'008/2023', texto)
-    dados['contrato'] = contrato_match.group() if contrato_match else "008/2023"
+    # 3. SEI da Solicitação de Liquidação
+    seis_solicitacao = re.findall(r'(?:solicitação|liquidação).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['solicitacao'] = list(set(seis_solicitacao)) if seis_solicitacao else []
     
-    # 5. VIGÊNCIA
-    vigencia_match = re.search(r'28/11/2026', texto)
-    dados['vigencia'] = vigencia_match.group() if vigencia_match else "28/11/2026"
+    # 4. SEI da Certificação Contábil
+    seis_contabil = re.findall(r'(?:contabilidade|certificação).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['contabil'] = list(set(seis_contabil)) if seis_contabil else []
     
-    # 6. OBJETO
-    objeto_match = re.search(r'GESTÃO DO ABASTECIMENTO', texto, re.IGNORECASE)
-    dados['objeto'] = objeto_match.group() if objeto_match else "GESTÃO DO ABASTECIMENTO"
+    # 5. SEI do Checklist
+    seis_checklist = re.findall(r'(?:checklist|auditoria).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['checklist'] = list(set(seis_checklist)) if seis_checklist else []
     
-    # 7. GESTORES
-    dados['gestores'] = "Flavio Dias Jr., Erinton C., Samuel S."
+    # 6. SEI da Autorização
+    seis_autorizacao = re.findall(r'(?:autoriza[çc][ãa]o|presid[eê]ncia).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['autorizacao'] = list(set(seis_autorizacao)) if seis_autorizacao else []
     
-    # 8. NOTA FISCAL
-    nf_match = re.search(r'3340715', texto)
-    dados['nota_fiscal'] = nf_match.group() if nf_match else "3340715"
+    # 7. SEI de Vale Transporte
+    seis_vt = re.findall(r'(?:vale.*?transporte|vt).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['vale_transporte'] = list(set(seis_vt)) if seis_vt else []
     
-    # 9. SEI DA NOTA FISCAL
-    sei_nf_match = re.search(r'124284740', texto)
-    dados['sei_nf'] = sei_nf_match.group() if sei_nf_match else "124284740"
+    # 8. SEI de Alimentação
+    seis_alimentacao = re.findall(r'(?:alimenta[çc][ãa]o|cesta).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['alimentacao'] = list(set(seis_alimentacao)) if seis_alimentacao else []
     
-    # 10. DATA EMISSÃO NF
-    data_nf_match = re.search(r'21/01/2026', texto)
-    dados['data_nf'] = data_nf_match.group() if data_nf_match else "21/01/2026"
+    # 9. SEI de Folha de Pagamento
+    seis_folha = re.findall(r'(?:folha.*?pagamento).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['folha_pagamento'] = list(set(seis_folha)) if seis_folha else []
     
-    # 11. VALOR
-    valor_match = re.search(r'28\.362,36', texto)
-    dados['valor'] = valor_match.group() if valor_match else "28.362,36"
+    # 10. SEI de Comprovantes de Salário
+    seis_salarios = re.findall(r'(?:comprovante.*?sal[áa]rios).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['comprovante_salarios'] = list(set(seis_salarios)) if seis_salarios else []
     
-    # 12. NOTA DE EMPENHO
-    ne_match = re.search(r'2026NE00123', texto)
-    dados['ne'] = ne_match.group() if ne_match else "2026NE00123"
+    # 11. SEI de Folha de Ponto
+    seis_ponto = re.findall(r'(?:folha.*?ponto|ponto.*?funcion[áa]rios).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['folha_ponto'] = list(set(seis_ponto)) if seis_ponto else []
     
-    # 13. NOTA DE LIQUIDAÇÃO
-    nl_match = re.search(r'2026NL00118', texto)
-    dados['nl'] = nl_match.group() if nl_match else "2026NL00118"
+    # 12. SEI de Relação de Funcionários
+    seis_relacao = re.findall(r'(?:rela[çc][ãa]o.*?funcion[áa]rios).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['relacao_funcionarios'] = list(set(seis_relacao)) if seis_relacao else []
     
-    # 14. DATA LIQUIDAÇÃO
-    data_nl_match = re.search(r'2026NL00118.*?(\d{2}/\d{2}/\d{4})', texto, re.DOTALL)
-    dados['data_nl'] = data_nl_match.group(1) if data_nl_match else "05/03/2026"
+    # 13. SEI de FGTS
+    seis_fgts = re.findall(r'(?:fgts|crf).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['fgts'] = list(set(seis_fgts)) if seis_fgts else []
     
-    # 15. SEI DA LIQUIDAÇÃO (Despacho de formalização) - ITEM 9
-    sei_atestado_match = re.search(r'124287269', texto)
-    dados['sei_atestado'] = sei_atestado_match.group() if sei_atestado_match else "124287269"
+    # 14. SEI de INSS
+    seis_inss = re.findall(r'(?:inss|previdenci[áa]ria).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['inss'] = list(set(seis_inss)) if seis_inss else []
     
-    # 16. SEI DA LIQUIDAÇÃO (Despacho de formalização)
-    sei_liquidacao_match = re.search(r'126352677', texto)
-    dados['sei_liquidacao'] = sei_liquidacao_match.group() if sei_liquidacao_match else "126352677"
+    return seis
+
+def extrair_texto_pdf(pdf_file):
+    """Extrai texto de qualquer PDF"""
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    texto = ""
+    for page in pdf_reader.pages:
+        texto += page.extract_text() or ""
+    return texto
+
+def extrair_fornecedor(texto):
+    """Extrai nome do fornecedor de forma genérica"""
+    padroes = [
+        r'(?:fornecedor|empresa|contratada|razao social)[:\s]*([A-Z][A-Z\s.,&]+(?:LTDA|Ltda|ME|EIRELI|SA|S/A))',
+        r'(?:fornecedor|empresa|contratada)[:\s]*([A-Z][A-Z\s.,&]+)',
+        r'([A-Z][A-Z\s.,&]+(?:LTDA|Ltda|ME|EIRELI|SA|S/A))'
+    ]
+    for padrao in padroes:
+        match = re.search(padrao, texto, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return "Não identificado"
+
+def extrair_cnpj(texto):
+    """Extrai CNPJ no formato XX.XXX.XXX/XXXX-XX"""
+    match = re.search(r'\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}', texto)
+    return match.group() if match else "Não identificado"
+
+def extrair_processo(texto):
+    """Extrai número do processo SEI"""
+    match = re.search(r'SEI[-/\s]*(\d+[-/\s]*\d+[-/\s]*\d+)', texto, re.IGNORECASE)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_contrato(texto):
+    """Extrai número do contrato"""
+    match = re.search(r'(?:contrato|processo)[:\s]*(\d+/\d{4})', texto, re.IGNORECASE)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_vigencia(texto):
+    """Extrai data de vigência"""
+    match = re.search(r'vig[êe]ncia[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_objeto(texto):
+    """Extrai objeto do contrato"""
+    match = re.search(r'(?:objeto|descrição do serviço)[:\s]*([^\n]+)', texto, re.IGNORECASE)
+    return match.group(1).strip() if match else "Não identificado"
+
+def extrair_gestores(texto):
+    """Extrai nomes dos gestores e fiscais"""
+    gestores = []
     
-    # ============================================
-    # CERTIDÃO FEDERAL - ITEM 3
-    # ============================================
-    cert_federal_datas = re.findall(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    # Procura por gestor
+    gestor = re.search(r'(?:gestor)[:\s]*([A-Z][A-Z\s]+)', texto, re.IGNORECASE)
+    if gestor:
+        gestores.append(gestor.group(1).strip())
     
-    if cert_federal_datas:
-        dados['cert_federal_validade'] = cert_federal_datas[-1]
-    else:
-        emissao_datas = re.findall(r'emitida[:\s]*.*?(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-        dados['cert_federal_validade'] = emissao_datas[-1] if emissao_datas else "01/08/2026"
+    # Procura por fiscais
+    fiscais = re.findall(r'(?:fiscal)[:\s]*([A-Z][A-Z\s]+)', texto, re.IGNORECASE)
+    for fiscal in fiscais:
+        if fiscal.strip() not in gestores:
+            gestores.append(fiscal.strip())
     
-    # ============================================
-    # CERTIDÃO FGTS - ITEM 4
-    # ============================================
-    cert_fgts_datas = re.findall(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    
-    if cert_fgts_datas:
-        dados['cert_fgts_inicio'] = cert_fgts_datas[-1][0]
-        dados['cert_fgts_fim'] = cert_fgts_datas[-1][1]
-    else:
-        dados['cert_fgts_inicio'] = "27/01/2026"
-        dados['cert_fgts_fim'] = "25/02/2026"
-    
-    # ============================================
-    # CERTIDÃO TRABALHISTA - ITEM 5
-    # ============================================
-    cert_trab_datas = re.findall(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    dados['cert_trab_validade'] = cert_trab_datas[-1] if cert_trab_datas else "01/08/2026"
-    
-    # 19. DISPENSA RETENÇÃO (Item 7)
-    dispensa_match = re.search(r'DISPENSA RETENÇÃO P/ PREVIDÊNCIA SOCIAL \(INSS\)', texto, re.IGNORECASE)
-    dados['dispensa'] = "Dispensa INSS na NF" if dispensa_match else "Dispensa INSS na NF"
-    
-    # 20. PORTARIA (Item 8)
-    portaria_match = re.search(r'1227/2023', texto)
-    dados['portaria'] = portaria_match.group() if portaria_match else "1227/2023"
-    
-    # 21. ATESTADO (Item 9)
-    atestado1_match = re.search(r'124287269', texto)
-    atestado2_match = re.search(r'124314551', texto)
-    if atestado1_match and atestado2_match:
-        dados['atestado'] = f"SEI {atestado1_match.group()}/{atestado2_match.group()}"
-    else:
-        dados['atestado'] = "SEI 124287269/124314551"
-    
-    # 22. Verificar mão-de-obra
-    mao_obra_keywords = ['mao de obra', 'terceirizado', 'funcionario', 'empregado']
-    dados['tem_mao_obra'] = any(palavra in texto_lower for palavra in mao_obra_keywords)
-    
-    return dados
+    return ", ".join(gestores) if gestores else "Não identificado"
+
+def extrair_nota_fiscal(texto):
+    """Extrai número da nota fiscal"""
+    match = re.search(r'(?:nota fiscal|nf|nfs[ -]e)[:\s]*n[º°]?\s*(\d+)', texto, re.IGNORECASE)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_data_emissao_nf(texto):
+    """Extrai data de emissão da nota fiscal"""
+    match = re.search(r'(\d{2}/\d{2}/\d{4})', texto)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_valor(texto):
+    """Extrai valor total"""
+    match = re.search(r'valor[:\s]*R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
+    return match.group(1) if match else "0,00"
+
+def extrair_nota_empenho(texto):
+    """Extrai número da nota de empenho"""
+    match = re.search(r'\d{4}NE\d{5}', texto)
+    return match.group() if match else "Não identificado"
+
+def extrair_nota_liquidacao(texto):
+    """Extrai número da nota de liquidação"""
+    match = re.search(r'\d{4}NL\d{5}', texto)
+    return match.group() if match else "Não identificado"
+
+def extrair_data_liquidacao(texto, nl_numero):
+    """Extrai data da liquidação"""
+    if nl_numero != "Não identificado":
+        contexto = re.search(f'{nl_numero}.*?(\d{{2}}/\d{{2}}/\d{{4}})', texto, re.DOTALL)
+        if contexto:
+            return contexto.group(1)
+    return "Não identificado"
+
+def extrair_portaria(texto):
+    """Extrai número da portaria"""
+    match = re.search(r'(\d+/\d{4})', texto)
+    return match.group(1) if match else "Não identificado"
+
+def extrair_certidao_federal(texto):
+    """Extrai data de validade da certidão federal"""
+    datas = re.findall(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if datas:
+        return datas[-1]
+    return "Não identificado"
+
+def extrair_certidao_fgts(texto):
+    """Extrai período de validade do CRF"""
+    datas = re.findall(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if datas:
+        return datas[-1]
+    return ("Não identificado", "Não identificado")
+
+def extrair_certidao_trabalhista(texto):
+    """Extrai data de validade da certidão trabalhista"""
+    datas = re.findall(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if datas:
+        return datas[-1]
+    return "Não identificado"
+
+def verificar_mao_obra(texto):
+    """Verifica se há indícios de mão-de-obra"""
+    palavras = ['mao de obra', 'terceirizado', 'funcionario', 'empregado', 'posto de trabalho', 
+                'folha de pagamento', 'salário', 'vale transporte', 'cesta básica']
+    return any(palavra in texto.lower() for palavra in palavras)
 
 def verificar_validade(data_str):
     """Verifica se uma data é anterior à data atual"""
@@ -207,14 +284,12 @@ def verificar_validade(data_str):
         return False, None
 
 # ============================================
-# FUNÇÃO PARA GERAR PDF EM DUAS PÁGINAS
+# FUNÇÃO PARA GERAR PDF
 # ============================================
 
-def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto):
+def gerar_pdf_profissional(dados, resultados, conclusao_texto, observacao_texto, seis_docs):
     """
-    Gera um PDF com:
-    - Página 1: Checklist completo (19 itens)
-    - Página 2: Texto legal e conclusão (fonte aumentada)
+    Gera um PDF profissional com as informações do processo
     """
     buffer = io.BytesIO()
     
@@ -230,10 +305,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
     elements = []
     styles = getSampleStyleSheet()
     
-    # ========================================
-    # ESTILOS PERSONALIZADOS
-    # ========================================
-    
+    # Estilos personalizados
     styles.add(ParagraphStyle(
         name='CabecalhoInstitucional',
         parent=styles['Normal'],
@@ -241,8 +313,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=2,
-        leading=14
+        spaceAfter=2
     ))
     
     styles.add(ParagraphStyle(
@@ -252,8 +323,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica',
-        spaceAfter=4,
-        leading=12
+        spaceAfter=4
     ))
     
     styles.add(ParagraphStyle(
@@ -273,8 +343,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1a5f9e'),
         fontName='Helvetica-Bold',
-        spaceAfter=8,
-        leading=13
+        spaceAfter=8
     ))
     
     styles.add(ParagraphStyle(
@@ -302,36 +371,13 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         wordWrap='CJK'
     ))
     
-    # ========================================
-    # ESTILOS DA PÁGINA 2 (FONTE AUMENTADA)
-    # ========================================
-    
     styles.add(ParagraphStyle(
-        name='TextoLegalPagina2',
+        name='TextoLegal',
         parent=styles['Normal'],
-        fontSize=9,  # AUMENTADO de 8 para 9
+        fontSize=8,
         fontName='Helvetica',
-        leading=13,  # AUMENTADO proporcionalmente
+        leading=12,
         leftIndent=10,
-        spaceAfter=8
-    ))
-    
-    styles.add(ParagraphStyle(
-        name='TextoSemiNegritoPagina2',
-        parent=styles['Normal'],
-        fontSize=9,  # AUMENTADO de 8 para 9
-        fontName='Helvetica-Bold',
-        leading=13,
-        leftIndent=10,
-        spaceAfter=8
-    ))
-    
-    styles.add(ParagraphStyle(
-        name='TituloSecaoPagina2',
-        parent=styles['Normal'],
-        fontSize=10,  # AUMENTADO de 9 para 10
-        fontName='Helvetica-Bold',
-        leading=14,
         spaceAfter=6
     ))
     
@@ -344,68 +390,55 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
         leading=8
     ))
     
-    # ========================================
-    # PÁGINA 1 - CABEÇALHO E CHECKLIST
-    # ========================================
-    
-    # Cabeçalho institucional
-    cabecalho1 = Paragraph("INSTITUTO DE PESOS E MEDIDAS IPEM/RJ", styles['CabecalhoInstitucional'])
-    elements.append(cabecalho1)
-    
-    cabecalho2 = Paragraph("AUDITORIA INTERNA - AUDIT", styles['SubCabecalho'])
-    elements.append(cabecalho2)
+    # Cabeçalho
+    elements.append(Paragraph("INSTITUTO DE PESOS E MEDIDAS IPEM/RJ", styles['CabecalhoInstitucional']))
+    elements.append(Paragraph("AUDITORIA INTERNA - AUDIT", styles['SubCabecalho']))
     elements.append(Spacer(1, 0.1*cm))
     
-    # Título
-    titulo = Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo'])
-    elements.append(titulo)
-    
-    # Número do processo
-    processo_negrito = Paragraph(f"<b>{dados['processo']}</b>", styles['ProcessoNegrito'])
-    elements.append(processo_negrito)
+    # Título e processo
+    elements.append(Paragraph("CHECKLIST DA DOCUMENTAÇÃO APRESENTADA DE PROCESSO DE DESPESA REGULAR", styles['Titulo']))
+    elements.append(Paragraph(f"<b>{dados['processo']}</b>", styles['ProcessoNegrito']))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Dados do processo em formato mais compacto
-    dados_compactos = [
-        [Paragraph(f"<b>Fornecedor:</b> {dados['fornecedor'][:50]}", styles['InfoValue']),
+    # Dados do processo
+    info_processo = [
+        [Paragraph(f"<b>Fornecedor:</b> {dados['fornecedor']}", styles['InfoValue']),
          Paragraph(f"<b>CNPJ:</b> {dados['cnpj']}", styles['InfoValue'])],
-        
         [Paragraph(f"<b>Contrato:</b> {dados['contrato']} | <b>Vigência:</b> {dados['vigencia']}", styles['InfoValue']),
-         Paragraph(f"<b>NF:</b> {dados['nota_fiscal']} (SEI {dados['sei_nf']})", styles['InfoValue'])],
-        
-        [Paragraph(f"<b>Valor:</b> R$ {dados['valor']} | <b>Gestor:</b> Flavio Jr., Erinton C., Samuel S.", styles['InfoValue']),
+         Paragraph(f"<b>NF:</b> {dados['nota_fiscal']}", styles['InfoValue'])],
+        [Paragraph(f"<b>Valor:</b> R$ {dados['valor']} | <b>Gestor:</b> {dados['gestores'][:30]}", styles['InfoValue']),
          Paragraph("", styles['InfoValue'])]
     ]
     
-    dados_table = Table(dados_compactos, colWidths=[10*cm, 8*cm])
-    dados_table.setStyle(TableStyle([
+    tabela_info = Table(info_processo, colWidths=[10*cm, 8*cm])
+    tabela_info.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('TOPPADDING', (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
-    elements.append(dados_table)
+    elements.append(tabela_info)
     elements.append(Spacer(1, 0.4*cm))
     
-    # CHECKLIST COMPLETO (19 itens)
-    checklist_data = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
+    # Checklist
+    dados_checklist = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
     
     for res in resultados:
         descricao = res['descricao']
         if len(descricao) > 65:
             descricao = descricao[:62] + "..."
         
-        checklist_data.append([
+        dados_checklist.append([
             str(res['item']),
             descricao,
             res['status'],
             res['observacao']
         ])
     
-    checklist_table = Table(checklist_data, colWidths=[0.8*cm, 8.5*cm, 1.2*cm, 4.0*cm], repeatRows=1)
+    tabela_checklist = Table(dados_checklist, colWidths=[0.8*cm, 8.5*cm, 1.2*cm, 4.0*cm], repeatRows=1)
     
-    table_style = [
+    estilo_tabela = [
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a5f9e')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
@@ -422,62 +455,53 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
     
     for i, res in enumerate(resultados, start=1):
         if res['status'] == 'S':
-            table_style.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#d4edda')))
+            estilo_tabela.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#d4edda')))
         elif res['status'] == 'N':
-            table_style.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#f8d7da')))
+            estilo_tabela.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#f8d7da')))
         else:
-            table_style.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#e2e3e5')))
+            estilo_tabela.append(('BACKGROUND', (2, i), (2, i), colors.HexColor('#e2e3e5')))
     
-    checklist_table.setStyle(TableStyle(table_style))
-    elements.append(checklist_table)
+    tabela_checklist.setStyle(TableStyle(estilo_tabela))
+    elements.append(tabela_checklist)
     elements.append(Spacer(1, 0.2*cm))
     
     # Legenda
     elements.append(Paragraph("S = Sim • N = Não • NA = Não Aplicável", 
                              ParagraphStyle('Legenda', fontSize=7, textColor=colors.HexColor('#666666'))))
     
-    # ========================================
-    # QUEBRA DE PÁGINA
-    # ========================================
+    # Quebra de página
     elements.append(PageBreak())
     
-    # ========================================
-    # PÁGINA 2 - TEXTO LEGAL E CONCLUSÃO (FONTE AUMENTADA)
-    # ========================================
-    
-    # Texto legal completo (sem título "PARECER DA AUDITORIA INTERNA")
-    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegalPagina2']))
-    elements.append(Paragraph(f"<b>{dados['sei_atestado']}</b>.", styles['TextoSemiNegritoPagina2']))
+    # Página 2 - Texto legal
+    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
+    elements.append(Paragraph(f"<b>{', '.join(seis_docs.get('atestado', ['Não identificado']))}</b>.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegalPagina2']))
-    elements.append(Paragraph(f"<b>{dados['sei_liquidacao']}</b>.", styles['TextoSemiNegritoPagina2']))
+    elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegal']))
+    elements.append(Paragraph(f"<b>{', '.join(seis_docs.get('contabil', ['Não identificado']))}</b>.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.3*cm))
     
-    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegalPagina2']))
+    elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegalPagina2']))
+    elements.append(Paragraph("2 – Conforme manifestação do Tribunal de Contas da União em seu Informativo 103/2012, “A perda da regularidade fiscal no curso de contratos de execução continuada ou parcela justifica a imposição de sanções à contratada, mas não autoriza a retenção de pagamento por serviços prestados”. (Acórdão nº 964/2012-Plenário, TC 017.371/2011-2, rel. Min Walton Alencar Rodrigues, 25.4.2012).", styles['TextoLegal']))
     elements.append(Spacer(1, 0.2*cm))
     
-    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegalPagina2']))
+    elements.append(Paragraph("Face à análise, a despesa encontra-se em condições de prosseguimento, estando em conformidade quanto à correta classificação orçamentária, ao enquadramento legal e à formalização processual.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.3*cm))
     
-    # CONCLUSÃO (baseada na resposta do usuário)
-    elements.append(Paragraph("CONCLUSÃO:", styles['TituloSecaoPagina2']))
-    elements.append(Paragraph(conclusao_texto, styles['TextoLegalPagina2']))
+    # Conclusão
+    elements.append(Paragraph("CONCLUSÃO:", styles['InfoLabel']))
+    elements.append(Paragraph(conclusao_texto, styles['InfoValue']))
     elements.append(Spacer(1, 0.3*cm))
     
-    # Observações adicionais
+    # Observações
     if observacao_texto:
-        elements.append(Paragraph("OBSERVAÇÕES:", styles['TituloSecaoPagina2']))
-        elements.append(Paragraph(observacao_texto, styles['TextoLegalPagina2']))
+        elements.append(Paragraph("OBSERVAÇÕES:", styles['InfoLabel']))
+        elements.append(Paragraph(observacao_texto, styles['InfoValue']))
         elements.append(Spacer(1, 0.3*cm))
     
-    elements.append(Paragraph("At.te", styles['TextoLegalPagina2']))
-    elements.append(Spacer(1, 0.5*cm))
-    
-    # Espaço para assinatura (opcional, sem linha)
+    elements.append(Paragraph("At.te", styles['InfoValue']))
     elements.append(Spacer(1, 1*cm))
     
     # Rodapé
@@ -492,7 +516,7 @@ def gerar_pdf_duas_paginas(dados, resultados, conclusao_texto, observacao_texto)
     return pdf_bytes
 
 # ============================================
-# INTERFACE PRINCIPAL (mantida igual)
+# INTERFACE PRINCIPAL
 # ============================================
 
 # Sidebar
@@ -533,43 +557,44 @@ if st.session_state.autenticado:
     uploaded_file = st.file_uploader("📤 Selecione o PDF do processo", type=['pdf'])
     
     if uploaded_file:
-        with st.spinner("🔍 Analisando documento..."):
-            # Ler PDF
-            pdf_reader = PyPDF2.PdfReader(uploaded_file)
-            texto_completo = ""
-            for page in pdf_reader.pages:
-                texto_completo += page.extract_text() or ""
+        with st.spinner("🔍 Analisando documento e extraindo todos os números SEI..."):
+            # Extrair texto do PDF
+            texto = extrair_texto_pdf(uploaded_file)
             
-            st.success(f"✅ PDF carregado: {uploaded_file.name} | {len(pdf_reader.pages)} páginas")
+            # Extrair TODOS os números SEI classificados
+            seis_docs = extrair_todos_seis(texto)
             
-            # Extrair dados
-            dados = extrair_dados_completos(texto_completo)
+            # Extrair dados básicos
+            dados = {}
+            dados['fornecedor'] = extrair_fornecedor(texto)
+            dados['cnpj'] = extrair_cnpj(texto)
+            dados['processo'] = extrair_processo(texto)
+            dados['contrato'] = extrair_contrato(texto)
+            dados['vigencia'] = extrair_vigencia(texto)
+            dados['objeto'] = extrair_objeto(texto)
+            dados['gestores'] = extrair_gestores(texto)
+            dados['nota_fiscal'] = extrair_nota_fiscal(texto)
+            dados['data_nf'] = extrair_data_emissao_nf(texto)
+            dados['valor'] = extrair_valor(texto)
+            dados['ne'] = extrair_nota_empenho(texto)
+            dados['nl'] = extrair_nota_liquidacao(texto)
+            dados['data_nl'] = extrair_data_liquidacao(texto, dados['nl'])
+            dados['portaria'] = extrair_portaria(texto)
             
-            # Verificar validade das certidões
-            data_atual = datetime.now()
-            
-            # Certidão Federal (Item 3)
-            federal_valida, federal_data = verificar_validade(dados['cert_federal_validade'])
-            if federal_valida and federal_data < data_atual:
-                cert_federal_obs = f"❌ VENCIDA {dados['cert_federal_validade']}"
+            # Certidões
+            dados['cert_federal_validade'] = extrair_certidao_federal(texto)
+            fgts = extrair_certidao_fgts(texto)
+            if fgts != ("Não identificado", "Não identificado"):
+                dados['cert_fgts_inicio'], dados['cert_fgts_fim'] = fgts
             else:
-                cert_federal_obs = f"Válida {dados['cert_federal_validade']}"
+                dados['cert_fgts_inicio'] = "Não identificado"
+                dados['cert_fgts_fim'] = "Não identificado"
+            dados['cert_trab_validade'] = extrair_certidao_trabalhista(texto)
             
-            # Certidão FGTS (Item 4)
-            fgts_valida, fgts_data = verificar_validade(dados['cert_fgts_fim'])
-            if fgts_valida and fgts_data < data_atual:
-                cert_fgts_obs = f"❌ VENCIDO {dados['cert_fgts_fim']}"
-            else:
-                cert_fgts_obs = f"{dados['cert_fgts_inicio']} a {dados['cert_fgts_fim']}"
+            # Verificar mão-de-obra
+            tem_mao_obra = verificar_mao_obra(texto)
             
-            # Certidão Trabalhista (Item 5)
-            trab_valida, trab_data = verificar_validade(dados['cert_trab_validade'])
-            if trab_valida and trab_data < data_atual:
-                cert_trab_obs = f"❌ VENCIDA {dados['cert_trab_validade']}"
-            else:
-                cert_trab_obs = f"Válida {dados['cert_trab_validade']}"
-            
-            # Mostrar dados do processo
+            # Mostrar dados extraídos
             st.subheader("📊 DADOS DO PROCESSO")
             
             col1, col2 = st.columns(2)
@@ -583,7 +608,7 @@ if st.session_state.autenticado:
             
             with col2:
                 st.markdown("**Nota Fiscal:**")
-                st.info(f"{dados['nota_fiscal']} (SEI {dados['sei_nf']})")
+                st.info(f"{dados['nota_fiscal']}")
                 st.markdown("**Valor:**")
                 st.info(f"R$ {dados['valor']}")
                 st.markdown("**Contrato:**")
@@ -591,33 +616,101 @@ if st.session_state.autenticado:
             
             st.markdown("---")
             
-            # RESULTADOS
+            # Mostrar números SEI encontrados
+            with st.expander("📋 NÚMEROS SEI ENCONTRADOS NO PROCESSO"):
+                for tipo, lista in seis_docs.items():
+                    if lista:
+                        st.markdown(f"**{tipo.replace('_', ' ').title()}:** {', '.join(lista)}")
+            
+            st.markdown("---")
+            
+            # Verificar validade das certidões
+            data_atual = datetime.now()
+            
+            # Certidão Federal
+            if dados['cert_federal_validade'] != "Não identificado":
+                federal_valida, _ = verificar_validade(dados['cert_federal_validade'])
+                cert_federal_obs = f"Válida até {dados['cert_federal_validade']}"
+            else:
+                cert_federal_obs = "Não identificado"
+            
+            # Certidão FGTS
+            if dados['cert_fgts_fim'] != "Não identificado":
+                fgts_valida, _ = verificar_validade(dados['cert_fgts_fim'])
+                cert_fgts_obs = f"{dados['cert_fgts_inicio']} a {dados['cert_fgts_fim']}"
+            else:
+                cert_fgts_obs = "Não identificado"
+            
+            # Certidão Trabalhista
+            if dados['cert_trab_validade'] != "Não identificado":
+                trab_valida, _ = verificar_validade(dados['cert_trab_validade'])
+                cert_trab_obs = f"Válida {dados['cert_trab_validade']}"
+            else:
+                cert_trab_obs = "Não identificado"
+            
+            # Montar resultados com os SEIs encontrados
             st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
             
-            # Resultados com observações
             resultados = [
-                {"item": 1, "descricao": checklist[0]["descricao"], "status": "S", "observacao": f"{dados['ne']} → {dados['nl']}"},
-                {"item": 2, "descricao": checklist[1]["descricao"], "status": "S", "observacao": f"SEI {dados['sei_nf']}"},
-                {"item": 3, "descricao": checklist[2]["descricao"], "status": "S", "observacao": cert_federal_obs},
-                {"item": 4, "descricao": checklist[3]["descricao"], "status": "S", "observacao": cert_fgts_obs},
-                {"item": 5, "descricao": checklist[4]["descricao"], "status": "S", "observacao": cert_trab_obs},
-                {"item": 6, "descricao": checklist[5]["descricao"], "status": "NA", "observacao": "N/A"},
-                {"item": 7, "descricao": checklist[6]["descricao"], "status": "S", "observacao": dados['dispensa']},
-                {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", "observacao": f"Portaria {dados['portaria']}"},
-                {"item": 9, "descricao": checklist[8]["descricao"], "status": "S", "observacao": dados['atestado']},
-                {"item": 10, "descricao": checklist[9]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 11, "descricao": checklist[10]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 12, "descricao": checklist[11]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 13, "descricao": checklist[12]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 14, "descricao": checklist[13]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 15, "descricao": checklist[14]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 16, "descricao": checklist[15]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 17, "descricao": checklist[16]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 18, "descricao": checklist[17]["descricao"], "status": "NA", "observacao": "Sem mão-obra"},
-                {"item": 19, "descricao": checklist[18]["descricao"], "status": "NA", "observacao": "Sem mão-obra"}
+                {"item": 1, "descricao": checklist[0]["descricao"], "status": "S" if dados['ne'] != "Não identificado" else "N", 
+                 "observacao": f"{dados['ne']} → {dados['nl']}" if dados['ne'] != "Não identificado" else "Não localizado"},
+                
+                {"item": 2, "descricao": checklist[1]["descricao"], "status": "S" if seis_docs.get('nota_fiscal') else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['nota_fiscal'])}" if seis_docs.get('nota_fiscal') else "Não localizado"},
+                
+                {"item": 3, "descricao": checklist[2]["descricao"], "status": "S" if dados['cert_federal_validade'] != "Não identificado" else "N", 
+                 "observacao": cert_federal_obs},
+                
+                {"item": 4, "descricao": checklist[3]["descricao"], "status": "S" if dados['cert_fgts_fim'] != "Não identificado" else "N", 
+                 "observacao": cert_fgts_obs},
+                
+                {"item": 5, "descricao": checklist[4]["descricao"], "status": "S" if dados['cert_trab_validade'] != "Não identificado" else "N", 
+                 "observacao": cert_trab_obs},
+                
+                {"item": 6, "descricao": checklist[5]["descricao"], "status": "S" if "retenção" in texto.lower() else "NA", 
+                 "observacao": "Há retenções" if "retenção" in texto.lower() else "N/A"},
+                
+                {"item": 7, "descricao": checklist[6]["descricao"], "status": "NA", 
+                 "observacao": "Não se aplica"},
+                
+                {"item": 8, "descricao": checklist[7]["descricao"], "status": "S" if dados['portaria'] != "Não identificado" else "N", 
+                 "observacao": f"Portaria {dados['portaria']}" if dados['portaria'] != "Não identificado" else "Não localizado"},
+                
+                {"item": 9, "descricao": checklist[8]["descricao"], "status": "S" if seis_docs.get('atestado') else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['atestado'])}" if seis_docs.get('atestado') else "Não localizado"},
+                
+                {"item": 10, "descricao": checklist[9]["descricao"], "status": "S" if seis_docs.get('relacao_funcionarios') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['relacao_funcionarios'])}" if seis_docs.get('relacao_funcionarios') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 11, "descricao": checklist[10]["descricao"], "status": "NA" if not tem_mao_obra else "N", 
+                 "observacao": "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 12, "descricao": checklist[11]["descricao"], "status": "S" if seis_docs.get('inss') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['inss'])}" if seis_docs.get('inss') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 13, "descricao": checklist[12]["descricao"], "status": "S" if seis_docs.get('fgts') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['fgts'])}" if seis_docs.get('fgts') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 14, "descricao": checklist[13]["descricao"], "status": "NA" if not tem_mao_obra else "N", 
+                 "observacao": "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 15, "descricao": checklist[14]["descricao"], "status": "S" if seis_docs.get('folha_pagamento') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['folha_pagamento'])}" if seis_docs.get('folha_pagamento') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 16, "descricao": checklist[15]["descricao"], "status": "S" if seis_docs.get('comprovante_salarios') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['comprovante_salarios'])}" if seis_docs.get('comprovante_salarios') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 17, "descricao": checklist[16]["descricao"], "status": "S" if seis_docs.get('vale_transporte') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['vale_transporte'])}" if seis_docs.get('vale_transporte') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 18, "descricao": checklist[17]["descricao"], "status": "S" if seis_docs.get('alimentacao') else "NA" if not tem_mao_obra else "N", 
+                 "observacao": f"SEI {', '.join(seis_docs['alimentacao'])}" if seis_docs.get('alimentacao') else "Sem mão-obra" if not tem_mao_obra else "Não localizado"},
+                
+                {"item": 19, "descricao": checklist[18]["descricao"], "status": "NA" if not tem_mao_obra else "N", 
+                 "observacao": "Sem mão-obra" if not tem_mao_obra else "Não localizado"}
             ]
             
-            # Mostrar resultados
+            # Mostrar resultados na tela
             for res in resultados:
                 col1, col2, col3, col4 = st.columns([0.5, 8, 0.8, 4])
                 with col1:
@@ -634,7 +727,7 @@ if st.session_state.autenticado:
                 with col4:
                     st.caption(res['observacao'])
             
-            # RESUMO
+            # Resumo
             st.markdown("---")
             st.subheader("📊 RESUMO DA ANÁLISE")
             
@@ -650,7 +743,7 @@ if st.session_state.autenticado:
             with col3:
                 st.metric("Não Aplicáveis (NA)", na_count)
             
-            # PERGUNTAS PARA O RELATÓRIO
+            # Perguntas para o relatório
             st.markdown("---")
             st.subheader("📝 INFORMAÇÕES PARA O RELATÓRIO")
             
@@ -660,16 +753,16 @@ if st.session_state.autenticado:
                 exigencia_texto = st.text_area("✏️ Descreva a(s) exigência(s):", height=100)
                 conclusao = exigencia_texto
             else:
-                conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI {dados['sei_liquidacao']}"
+                conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI {', '.join(seis_docs.get('contabil', ['Não identificado']))}"
             
             tem_observacao = st.radio("📝 Existe alguma observação a fazer?", ["Não", "Sim"], horizontal=True)
             observacao_texto = st.text_area("✏️ Descreva a(s) observação(ões):", height=100) if tem_observacao == "Sim" else ""
             
             # Botão para gerar PDF
             st.markdown("---")
-            if st.button("📥 GERAR RELATÓRIO PDF (2 PÁGINAS)", type="primary", use_container_width=True):
-                with st.spinner("Gerando PDF com checklist na página 1 e texto legal na página 2..."):
-                    pdf_bytes = gerar_pdf_duas_paginas(dados, resultados, conclusao, observacao_texto)
+            if st.button("📥 GERAR RELATÓRIO PDF", type="primary", use_container_width=True):
+                with st.spinner("Gerando PDF..."):
+                    pdf_bytes = gerar_pdf_profissional(dados, resultados, conclusao, observacao_texto, seis_docs)
                     
                     st.download_button(
                         label="📄 Baixar relatório PDF",
@@ -686,4 +779,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v8.1 | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v11.0 - Com Extração de SEIs | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
