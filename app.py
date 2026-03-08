@@ -50,7 +50,7 @@ st.markdown("""
 
 st.markdown('<div class="main-header"><h1>📋 ANÁLISE DE PROCESSO DE PAGAMENTO - IPEM/RJ</h1></div>', unsafe_allow_html=True)
 
-# Checklist completo
+# Checklist completo (ATUALIZADO - ITEM 14 REMOVIDO)
 checklist = [
     {"item": 1, "descricao": "Nota de empenho e demonstrativo de saldo (art. 63, §1°, II, da Lei 4320/64)", "tipo": "obrigatorio"},
     {"item": 2, "descricao": "Nota Fiscal em nome do IPEM, de acordo com o empenho e com o objeto", "tipo": "obrigatorio"},
@@ -62,15 +62,14 @@ checklist = [
     {"item": 8, "descricao": "Portaria de Nomeação de Fiscalização", "tipo": "obrigatorio"},
     {"item": 9, "descricao": "Atestado do Gestor do contrato de que os serviços ou aquisições contratados foram prestados a contento", "tipo": "obrigatorio"},
     {"item": 10, "descricao": "Relação dos funcionários que executaram o serviço", "tipo": "mao_obra"},
-    {"item": 11, "descricao": "Comprovante da GFIP", "tipo": "mao_obra"},
+    {"item": 11, "descricao": "FGTS Digital", "tipo": "mao_obra"},  # ALTERADO
     {"item": 12, "descricao": "Comprovante de pagamento do INSS", "tipo": "mao_obra"},
     {"item": 13, "descricao": "Comprovante de pagamento do FGTS", "tipo": "mao_obra"},
-    {"item": 14, "descricao": "Protocolo do envio dos arquivos - Conectividade Social", "tipo": "mao_obra"},
-    {"item": 15, "descricao": "Folha de pagamento", "tipo": "mao_obra"},
-    {"item": 16, "descricao": "Comprovante de pagamento dos salários", "tipo": "mao_obra"},
-    {"item": 17, "descricao": "Comprovante de pagamento do Vale transporte", "tipo": "mao_obra"},
-    {"item": 18, "descricao": "Comprovante de pagamento do Vale alimentação / refeição", "tipo": "mao_obra"},
-    {"item": 19, "descricao": "Comprovante de pagamento de rescisão e FGTS", "tipo": "mao_obra"}
+    {"item": 14, "descricao": "Folha de pagamento", "tipo": "mao_obra"},  # ANTIGO 15
+    {"item": 15, "descricao": "Comprovante de pagamento dos salários", "tipo": "mao_obra"},  # ANTIGO 16
+    {"item": 16, "descricao": "Comprovante de pagamento do Vale transporte", "tipo": "mao_obra"},  # ANTIGO 17
+    {"item": 17, "descricao": "Comprovante de pagamento do Vale alimentação / refeição", "tipo": "mao_obra"},  # ANTIGO 18
+    {"item": 18, "descricao": "Comprovante de pagamento de rescisão e FGTS", "tipo": "mao_obra"}  # ANTIGO 19
 ]
 
 # ============================================
@@ -303,12 +302,12 @@ def extrair_retencoes(texto):
     return retencoes
 
 # ============================================
-# FUNÇÕES DE EXTRAÇÃO DE SEIS (MANUAL - BASEADO NA ANÁLISE)
+# FUNÇÕES DE EXTRAÇÃO DE SEIS
 # ============================================
 
 def extrair_seis_do_processo(texto):
     """
-    Extrai os números SEI específicos do processo com base na análise manual
+    Extrai os números SEI específicos do processo
     """
     seis = {}
     
@@ -391,13 +390,12 @@ def verificar_validade(data_str):
         return False, None
 
 # ============================================
-# FUNÇÃO PARA GERAR PDF (COM FORMATAÇÃO CORRETA)
+# FUNÇÃO PARA GERAR PDF
 # ============================================
 
 def gerar_pdf_final(dados, certidoes, retencoes, seis_docs, resultados, conclusao_texto, observacao_texto):
     """
     Gera um PDF profissional com as informações do processo
-    Formatação baseada no modelo que funcionou anteriormente
     """
     buffer = io.BytesIO()
     
@@ -551,7 +549,6 @@ def gerar_pdf_final(dados, certidoes, retencoes, seis_docs, resultados, conclusa
     # Checklist
     cabecalho_checklist = [["ITEM", "EVENTO A SER VERIFICADO", "S/N/NA", "OBSERVAÇÕES"]]
     
-    # Usar os resultados que já vieram prontos
     for res in resultados:
         cabecalho_checklist.append([
             Paragraph(str(res['item']), ParagraphStyle('Item', fontSize=7, alignment=TA_CENTER)),
@@ -770,7 +767,7 @@ if st.session_state.autenticado:
             # Certidão Trabalhista
             cert_trab_obs = f"Certidão Trabalhista válida até {certidoes['trabalhista']}"
             
-            # Montar resultados com os SEIs encontrados (MANUAL - BASEADO NA ANÁLISE)
+            # Montar resultados com os SEIs encontrados (ATUALIZADO - SEM ITEM 14)
             st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
             
             resultados = [
@@ -804,7 +801,7 @@ if st.session_state.autenticado:
                 {"item": 10, "descricao": checklist[9]["descricao"], "status": "S", 
                  "observacao": "SEI 124494923"},
                 
-                {"item": 11, "descricao": checklist[10]["descricao"], "status": "S", 
+                {"item": 11, "descricao": checklist[10]["descricao"], "status": "S",  # FGTS Digital
                  "observacao": "SEI 124495289"},
                 
                 {"item": 12, "descricao": checklist[11]["descricao"], "status": "S", 
@@ -813,22 +810,19 @@ if st.session_state.autenticado:
                 {"item": 13, "descricao": checklist[12]["descricao"], "status": "S", 
                  "observacao": "SEI 124495323"},
                 
-                {"item": 14, "descricao": checklist[13]["descricao"], "status": "NA", 
-                 "observacao": "Não se aplica (sistema FGTS Digital substitui o protocolo)"},
-                
-                {"item": 15, "descricao": checklist[14]["descricao"], "status": "S", 
+                {"item": 14, "descricao": checklist[13]["descricao"], "status": "S",  # ANTIGO 15 - Folha
                  "observacao": "SEI 124495289"},
                 
-                {"item": 16, "descricao": checklist[15]["descricao"], "status": "S", 
+                {"item": 15, "descricao": checklist[14]["descricao"], "status": "S",  # ANTIGO 16 - Salários
                  "observacao": "SEI 124495373"},
                 
-                {"item": 17, "descricao": checklist[16]["descricao"], "status": "S", 
+                {"item": 16, "descricao": checklist[15]["descricao"], "status": "S",  # ANTIGO 17 - VT
                  "observacao": "SEI 124498843"},
                 
-                {"item": 18, "descricao": checklist[17]["descricao"], "status": "S", 
+                {"item": 17, "descricao": checklist[16]["descricao"], "status": "S",  # ANTIGO 18 - VA
                  "observacao": "SEI 124495431"},
                 
-                {"item": 19, "descricao": checklist[18]["descricao"], "status": "NA", 
+                {"item": 18, "descricao": checklist[17]["descricao"], "status": "NA",  # ANTIGO 19 - Rescisão
                  "observacao": "Sem rescisão no período"}
             ]
             
@@ -904,4 +898,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v14.0 - Corrigido | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v15.0 - Atualizado | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
