@@ -47,10 +47,17 @@ st.markdown("""
     }
     .sei-mapper {
         background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 5px;
+        padding: 1.5rem;
+        border-radius: 10px;
         border: 1px solid #dee2e6;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .sei-item {
+        background-color: white;
+        padding: 0.8rem;
+        border-radius: 5px;
+        border-left: 4px solid #1a5f9e;
+        margin-bottom: 0.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -91,10 +98,6 @@ def extrair_texto_pdf(pdf_file):
         texto += page.extract_text() or ""
     return texto
 
-# ============================================
-# FUNÇÕES DE EXTRAÇÃO GENÉRICAS CONFIÁVEIS
-# ============================================
-
 def extrair_fornecedor(texto):
     """Extrai nome do fornecedor de forma genérica"""
     padroes = [
@@ -125,13 +128,13 @@ def extrair_contrato(texto):
 
 def extrair_vigencia(texto):
     """Extrai data de vigência"""
-    match = re.search(r'vig[êe]ncia[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    if match:
-        return match.group(1)
-    
     vigencia = re.search(r'(\d{2}/\d{2}/\d{4})\s*a\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
     if vigencia:
         return f"{vigencia.group(1)} a {vigencia.group(2)}"
+    
+    match = re.search(r'vig[êe]ncia[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if match:
+        return match.group(1)
     
     return "Não identificado"
 
@@ -144,7 +147,6 @@ def extrair_gestores(texto):
     """Extrai nomes dos gestores e fiscais"""
     gestores = []
     
-    # Busca por nomes após "Gestor" e "Fiscal"
     gestor = re.search(r'(?:gestor)[:\s]*([A-Z][A-Z\s]+)', texto, re.IGNORECASE)
     if gestor:
         gestores.append(f"Gestor: {gestor.group(1).strip()}")
@@ -167,8 +169,7 @@ def extrair_data_emissao_nf(texto):
     return match.group(1) if match else "Não identificado"
 
 def extrair_valor_bruto(texto):
-    """Extrai valor bruto total de forma confiável"""
-    # Procura por padrões específicos de valor
+    """Extrai valor bruto total"""
     padroes = [
         r'valor[:\s]*R?\$?\s*([\d.,]+)',
         r'total[:\s]*R?\$?\s*([\d.,]+)',
@@ -178,26 +179,24 @@ def extrair_valor_bruto(texto):
     for padrao in padroes:
         matches = re.findall(padrao, texto, re.IGNORECASE)
         if matches:
-            # Filtra valores que parecem ser totais (maiores)
             valores = []
             for val in matches:
                 try:
                     val_clean = val.replace('.', '').replace(',', '.')
                     num = float(val_clean)
-                    if num > 1000:  # Assume que valores totais são > 1000
+                    if num > 1000:
                         valores.append((num, val))
                 except:
                     continue
             
             if valores:
-                # Retorna o maior valor encontrado
                 maior = max(valores, key=lambda x: x[0])
                 return maior[1]
     
     return "0,00"
 
 def extrair_valor_liquido(texto):
-    """Extrai valor líquido de forma confiável"""
+    """Extrai valor líquido"""
     padroes = [
         r'valor líquido[:\s]*R?\$?\s*([\d.,]+)',
         r'líquido[:\s]*R?\$?\s*([\d.,]+)',
@@ -209,7 +208,6 @@ def extrair_valor_liquido(texto):
         if match:
             return match.group(1)
     
-    # Se não encontrar, retorna o valor bruto (fallback)
     return extrair_valor_bruto(texto)
 
 def extrair_nota_empenho(texto):
@@ -262,23 +260,18 @@ def extrair_retencoes(texto):
     """Extrai informações sobre retenções"""
     retencoes = {}
     
-    # INSS
     inss_match = re.search(r'INSS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
     retencoes['inss'] = inss_match.group(1) if inss_match else "0,00"
     
-    # IRRF
     irrf_match = re.search(r'IRRF.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
     retencoes['irrf'] = irrf_match.group(1) if irrf_match else "0,00"
     
-    # PIS
     pis_match = re.search(r'PIS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
     retencoes['pis'] = pis_match.group(1) if pis_match else "0,00"
     
-    # COFINS
     cofins_match = re.search(r'COFINS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
     retencoes['cofins'] = cofins_match.group(1) if cofins_match else "0,00"
     
-    # CSLL
     csll_match = re.search(r'CSLL.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
     retencoes['csll'] = csll_match.group(1) if csll_match else "0,00"
     
@@ -289,9 +282,8 @@ def extrair_todos_seis(texto):
     Extrai TODOS os números SEI (8-9 dígitos) do documento
     Retorna uma lista simples, sem classificação
     """
-    # Encontrar todos os números de 8-9 dígitos
     todos_seis = re.findall(r'\b(\d{8,9})\b', texto)
-    return list(set(todos_seis))  # Remove duplicatas
+    return sorted(list(set(todos_seis)))  # Remove duplicatas e ordena
 
 def verificar_mao_obra(texto):
     """Verifica se há indícios de mão-de-obra"""
@@ -641,11 +633,6 @@ if st.session_state.autenticado:
             # Verificar mão-de-obra
             tem_mao_obra = verificar_mao_obra(texto)
             
-            # Inicializar mapeamento SEI na sessão se não existir
-            if 'mapeamento_seis' not in st.session_state:
-                st.session_state.mapeamento_seis = {}
-                st.session_state.mapeamento_concluido = False
-            
             # Mostrar dados extraídos
             st.subheader("📊 DADOS DO PROCESSO")
             
@@ -673,147 +660,145 @@ if st.session_state.autenticado:
             st.markdown("---")
             
             # ============================================
-            # MAPEAMENTO MANUAL DE SEIS
+            # MAPEAMENTO MANUAL DE SEIS (OPÇÃO 1)
             # ============================================
             
-            st.subheader("🔗 MAPEAMENTO DE NÚMEROS SEI")
+            st.subheader("🔗 MAPEAMENTO MANUAL DE NÚMEROS SEI")
             st.markdown('<div class="sei-mapper">', unsafe_allow_html=True)
             st.markdown("**Selecione os números SEI correspondentes a cada documento:**")
             
-            if not st.session_state.mapeamento_concluido:
-                
-                # Item 1 - NE/NL (não precisa de SEI)
-                st.markdown("**Item 1 - Nota de Empenho/Liquidação:**")
-                st.markdown(f"NE: {dados['ne']} | NL: {dados['nl']} | Data: {dados['data_nl']}")
-                st.divider()
-                
-                # Item 2 - Nota Fiscal
-                st.markdown("**Item 2 - Nota Fiscal:**")
-                opcoes_nf = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['nota_fiscal'] = st.selectbox(
-                    "Selecione o SEI da Nota Fiscal:", opcoes_nf, key="sel_nf"
-                )
-                st.divider()
-                
-                # Item 9 - Atestado
-                st.markdown("**Item 9 - Atestado do Gestor:**")
-                opcoes_atestado = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['atestado'] = st.selectbox(
-                    "Selecione o SEI do Atestado:", opcoes_atestado, key="sel_atestado"
-                )
-                st.divider()
-                
-                # Item 10 - Relação de funcionários
-                st.markdown("**Item 10 - Relação de funcionários:**")
-                opcoes_relacao = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['relacao_funcionarios'] = st.selectbox(
-                    "Selecione o SEI da Relação de funcionários:", opcoes_relacao, key="sel_relacao"
-                )
-                st.divider()
-                
-                # Item 11 - FGTS Digital
-                st.markdown("**Item 11 - FGTS Digital:**")
-                opcoes_fgts_digital = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['fgts_digital'] = st.selectbox(
-                    "Selecione o SEI do FGTS Digital:", opcoes_fgts_digital, key="sel_fgts_digital"
-                )
-                st.divider()
-                
-                # Item 12 - INSS
-                st.markdown("**Item 12 - Comprovante de pagamento do INSS:**")
-                opcoes_inss = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['inss'] = st.selectbox(
-                    "Selecione o SEI do INSS:", opcoes_inss, key="sel_inss"
-                )
-                st.divider()
-                
-                # Item 13 - FGTS
-                st.markdown("**Item 13 - Comprovante de pagamento do FGTS:**")
-                opcoes_fgts = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['fgts'] = st.selectbox(
-                    "Selecione o SEI do FGTS:", opcoes_fgts, key="sel_fgts"
-                )
-                st.divider()
-                
-                # Item 14 - Folha de pagamento
-                st.markdown("**Item 14 - Folha de pagamento:**")
-                opcoes_folha = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['folha_pagamento'] = st.selectbox(
-                    "Selecione o SEI da Folha de pagamento:", opcoes_folha, key="sel_folha"
-                )
-                st.divider()
-                
-                # Item 15 - Comprovante de salários
-                st.markdown("**Item 15 - Comprovante de pagamento dos salários:**")
-                opcoes_salarios = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['comprovante_salarios'] = st.selectbox(
-                    "Selecione o SEI do Comprovante de salários:", opcoes_salarios, key="sel_salarios"
-                )
-                st.divider()
-                
-                # Item 16 - Vale transporte
-                st.markdown("**Item 16 - Vale transporte:**")
-                opcoes_vt = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['vale_transporte'] = st.selectbox(
-                    "Selecione o SEI do Vale transporte:", opcoes_vt, key="sel_vt"
-                )
-                st.divider()
-                
-                # Item 17 - Vale alimentação
-                st.markdown("**Item 17 - Vale alimentação:**")
-                opcoes_va = ["Não localizado"] + todos_seis
-                st.session_state.mapeamento_seis['vale_alimentacao'] = st.selectbox(
-                    "Selecione o SEI do Vale alimentação:", opcoes_va, key="sel_va"
-                )
-                st.divider()
-                
-                # Item 8 - Portaria
-                st.markdown("**Item 8 - Portaria:**")
-                st.markdown(f"Número da Portaria: {dados['portaria']}")
-                st.divider()
-                
-                # Item 18 - Rescisão (geralmente NA)
-                st.markdown("**Item 18 - Rescisão:**")
-                opcoes_rescisao = ["Não localizado", "Não Aplicável"] + todos_seis
-                st.session_state.mapeamento_seis['rescisao'] = st.selectbox(
-                    "Selecione o SEI da Rescisão (ou 'Não Aplicável'):", opcoes_rescisao, key="sel_rescisao"
-                )
-                st.divider()
-                
-                # Item 3,4,5 - Certidões (automático)
-                st.markdown("**Certidões (detectadas automaticamente):**")
-                st.markdown(f"- Federal: {certidoes['federal']}")
-                st.markdown(f"- FGTS: {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}")
-                st.markdown(f"- Trabalhista: {certidoes['trabalhista']}")
-                st.divider()
-                
-                # Contabilidade (para o texto legal)
-                st.markdown("**Certificação Contábil (para o texto legal):**")
-                opcoes_contabil = ["Não identificado"] + todos_seis
-                st.session_state.mapeamento_seis['contabil'] = st.selectbox(
-                    "Selecione o SEI da Certificação Contábil:", opcoes_contabil, key="sel_contabil"
-                )
-                
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    if st.button("✅ CONFIRMAR MAPEAMENTO", type="primary", use_container_width=True):
-                        st.session_state.mapeamento_concluido = True
-                        st.rerun()
+            # Inicializar mapeamento na sessão
+            if 'mapeamento_seis' not in st.session_state:
+                st.session_state.mapeamento_seis = {}
             
-            else:
-                st.success("✅ Mapeamento concluído!")
-                if st.button("✏️ Editar mapeamento"):
-                    st.session_state.mapeamento_concluido = False
-                    st.rerun()
+            # Adicionar opção "Não localizado" e "Não Aplicável"
+            opcoes = ["Não localizado"] + todos_seis
+            opcoes_com_na = ["Não localizado", "Não Aplicável"] + todos_seis
+            
+            # Criar layout em colunas para o mapeamento
+            col_left, col_right = st.columns(2)
+            
+            with col_left:
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 1 - Nota de Empenho/Liquidação**")
+                st.markdown(f"NE: {dados['ne']} | NL: {dados['nl']} | Data: {dados['data_nl']}")
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 2 - Nota Fiscal**")
+                st.session_state.mapeamento_seis['nota_fiscal'] = st.selectbox(
+                    "Selecione o SEI da Nota Fiscal:", opcoes, key="sel_nf", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 8 - Portaria**")
+                st.markdown(f"Número da Portaria: {dados['portaria']}")
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 9 - Atestado do Gestor**")
+                st.session_state.mapeamento_seis['atestado'] = st.selectbox(
+                    "Selecione o SEI do Atestado:", opcoes, key="sel_atestado", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 10 - Relação de funcionários**")
+                st.session_state.mapeamento_seis['relacao_funcionarios'] = st.selectbox(
+                    "Selecione o SEI da Relação de funcionários:", opcoes, key="sel_relacao", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 11 - FGTS Digital**")
+                st.session_state.mapeamento_seis['fgts_digital'] = st.selectbox(
+                    "Selecione o SEI do FGTS Digital:", opcoes, key="sel_fgts_digital", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 12 - INSS**")
+                st.session_state.mapeamento_seis['inss'] = st.selectbox(
+                    "Selecione o SEI do INSS:", opcoes, key="sel_inss", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with col_right:
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 13 - FGTS**")
+                st.session_state.mapeamento_seis['fgts'] = st.selectbox(
+                    "Selecione o SEI do FGTS:", opcoes, key="sel_fgts", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 14 - Folha de pagamento**")
+                st.session_state.mapeamento_seis['folha_pagamento'] = st.selectbox(
+                    "Selecione o SEI da Folha de pagamento:", opcoes, key="sel_folha", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 15 - Comprovante de salários**")
+                st.session_state.mapeamento_seis['comprovante_salarios'] = st.selectbox(
+                    "Selecione o SEI do Comprovante de salários:", opcoes, key="sel_salarios", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 16 - Vale transporte**")
+                st.session_state.mapeamento_seis['vale_transporte'] = st.selectbox(
+                    "Selecione o SEI do Vale transporte:", opcoes, key="sel_vt", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 17 - Vale alimentação**")
+                st.session_state.mapeamento_seis['vale_alimentacao'] = st.selectbox(
+                    "Selecione o SEI do Vale alimentação:", opcoes, key="sel_va", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Item 18 - Rescisão**")
+                st.session_state.mapeamento_seis['rescisao'] = st.selectbox(
+                    "Selecione o SEI da Rescisão (ou 'Não Aplicável'):", opcoes_com_na, key="sel_rescisao", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="sei-item">', unsafe_allow_html=True)
+                st.markdown("**Certificação Contábil (para o texto legal)**")
+                st.session_state.mapeamento_seis['contabil'] = st.selectbox(
+                    "Selecione o SEI da Certificação Contábil:", opcoes, key="sel_contabil", index=0
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Mostrar certidões (automático)
+            st.markdown("---")
+            st.markdown("### 📅 CERTIDÕES (DETECTADAS AUTOMATICAMENTE)")
+            col_cert1, col_cert2, col_cert3 = st.columns(3)
+            with col_cert1:
+                st.markdown(f"**Federal:** {certidoes['federal']}")
+            with col_cert2:
+                st.markdown(f"**FGTS:** {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}")
+            with col_cert3:
+                st.markdown(f"**Trabalhista:** {certidoes['trabalhista']}")
+            
+            st.markdown("---")
+            
+            # Botão para confirmar mapeamento
+            if st.button("✅ CONFIRMAR MAPEAMENTO", type="primary", use_container_width=True):
+                st.session_state.mapeamento_concluido = True
+                st.rerun()
             
             st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown("---")
             
             # ============================================
             # MONTAR RESULTADOS COM BASE NO MAPEAMENTO
             # ============================================
             
-            if st.session_state.mapeamento_concluido:
+            if 'mapeamento_concluido' in st.session_state and st.session_state.mapeamento_concluido:
                 
                 # Construir string de retenções
                 retencoes_str = []
@@ -830,6 +815,30 @@ if st.session_state.autenticado:
                 
                 retencoes_texto = "Há retenções (" + ", ".join(retencoes_str) + ")" if retencoes_str else "Não identificado"
                 
+                # Verificar validade das certidões
+                data_atual = datetime.now()
+                
+                # Certidão Federal
+                if certidoes['federal'] != "Não identificado":
+                    federal_valida, _ = verificar_validade(certidoes['federal'])
+                    cert_federal_obs = f"Certidão Federal válida até {certidoes['federal']}"
+                else:
+                    cert_federal_obs = "Não identificado"
+                
+                # Certidão FGTS
+                if certidoes['fgts_fim'] != "Não identificado":
+                    fgts_valida, _ = verificar_validade(certidoes['fgts_fim'])
+                    cert_fgts_obs = f"CRF válido de {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}"
+                else:
+                    cert_fgts_obs = "Não identificado"
+                
+                # Certidão Trabalhista
+                if certidoes['trabalhista'] != "Não identificado":
+                    trab_valida, _ = verificar_validade(certidoes['trabalhista'])
+                    cert_trab_obs = f"Certidão Trabalhista válida até {certidoes['trabalhista']}"
+                else:
+                    cert_trab_obs = "Não identificado"
+                
                 resultados = [
                     {"item": 1, "descricao": checklist[0]["descricao"], 
                      "status": "S" if dados['ne'] != "Não identificado" and dados['nl'] != "Não identificado" else "N",
@@ -841,15 +850,15 @@ if st.session_state.autenticado:
                     
                     {"item": 3, "descricao": checklist[2]["descricao"], 
                      "status": "S" if certidoes['federal'] != "Não identificado" else "N",
-                     "observacao": f"Certidão Federal válida até {certidoes['federal']}"},
+                     "observacao": cert_federal_obs},
                     
                     {"item": 4, "descricao": checklist[3]["descricao"], 
                      "status": "S" if certidoes['fgts_fim'] != "Não identificado" else "N",
-                     "observacao": f"CRF válido de {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}"},
+                     "observacao": cert_fgts_obs},
                     
                     {"item": 5, "descricao": checklist[4]["descricao"], 
                      "status": "S" if certidoes['trabalhista'] != "Não identificado" else "N",
-                     "observacao": f"Certidão Trabalhista válida até {certidoes['trabalhista']}"},
+                     "observacao": cert_trab_obs},
                     
                     {"item": 6, "descricao": checklist[5]["descricao"], 
                      "status": "S" if retencoes_str else "N",
@@ -977,4 +986,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v17.0 - Mapeamento Manual | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v18.0 - Mapeamento Manual | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
