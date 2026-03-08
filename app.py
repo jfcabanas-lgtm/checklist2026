@@ -50,7 +50,7 @@ st.markdown("""
 
 st.markdown('<div class="main-header"><h1>📋 ANÁLISE DE PROCESSO DE PAGAMENTO - IPEM/RJ</h1></div>', unsafe_allow_html=True)
 
-# Checklist completo (ATUALIZADO - ITEM 14 REMOVIDO)
+# Checklist atualizado (18 itens)
 checklist = [
     {"item": 1, "descricao": "Nota de empenho e demonstrativo de saldo (art. 63, §1°, II, da Lei 4320/64)", "tipo": "obrigatorio"},
     {"item": 2, "descricao": "Nota Fiscal em nome do IPEM, de acordo com o empenho e com o objeto", "tipo": "obrigatorio"},
@@ -62,14 +62,14 @@ checklist = [
     {"item": 8, "descricao": "Portaria de Nomeação de Fiscalização", "tipo": "obrigatorio"},
     {"item": 9, "descricao": "Atestado do Gestor do contrato de que os serviços ou aquisições contratados foram prestados a contento", "tipo": "obrigatorio"},
     {"item": 10, "descricao": "Relação dos funcionários que executaram o serviço", "tipo": "mao_obra"},
-    {"item": 11, "descricao": "FGTS Digital", "tipo": "mao_obra"},  # ALTERADO
+    {"item": 11, "descricao": "FGTS Digital", "tipo": "mao_obra"},
     {"item": 12, "descricao": "Comprovante de pagamento do INSS", "tipo": "mao_obra"},
     {"item": 13, "descricao": "Comprovante de pagamento do FGTS", "tipo": "mao_obra"},
-    {"item": 14, "descricao": "Folha de pagamento", "tipo": "mao_obra"},  # ANTIGO 15
-    {"item": 15, "descricao": "Comprovante de pagamento dos salários", "tipo": "mao_obra"},  # ANTIGO 16
-    {"item": 16, "descricao": "Comprovante de pagamento do Vale transporte", "tipo": "mao_obra"},  # ANTIGO 17
-    {"item": 17, "descricao": "Comprovante de pagamento do Vale alimentação / refeição", "tipo": "mao_obra"},  # ANTIGO 18
-    {"item": 18, "descricao": "Comprovante de pagamento de rescisão e FGTS", "tipo": "mao_obra"}  # ANTIGO 19
+    {"item": 14, "descricao": "Folha de pagamento", "tipo": "mao_obra"},
+    {"item": 15, "descricao": "Comprovante de pagamento dos salários", "tipo": "mao_obra"},
+    {"item": 16, "descricao": "Comprovante de pagamento do Vale transporte", "tipo": "mao_obra"},
+    {"item": 17, "descricao": "Comprovante de pagamento do Vale alimentação / refeição", "tipo": "mao_obra"},
+    {"item": 18, "descricao": "Comprovante de pagamento de rescisão e FGTS", "tipo": "mao_obra"}
 ]
 
 # ============================================
@@ -85,17 +85,11 @@ def extrair_texto_pdf(pdf_file):
     return texto
 
 # ============================================
-# FUNÇÕES DE EXTRAÇÃO DE DADOS BÁSICOS
+# FUNÇÕES DE EXTRAÇÃO GENÉRICAS (SEM VALORES FIXOS)
 # ============================================
 
 def extrair_fornecedor(texto):
-    """Extrai nome do fornecedor"""
-    # Procura por padrões específicos do processo PLIMA
-    fornecedor_match = re.search(r'PLIMA\s+VIGILANCIA\s+E\s+SEGURANCA\s+PRIVADA\s+LTDA', texto, re.IGNORECASE)
-    if fornecedor_match:
-        return fornecedor_match.group().strip()
-    
-    # Padrões genéricos
+    """Extrai nome do fornecedor de forma genérica"""
     padroes = [
         r'(?:fornecedor|empresa|contratada|razao social)[:\s]*([A-Z][A-Z\s.,&]+(?:LTDA|Ltda|ME|EIRELI|SA|S/A))',
         r'(?:fornecedor|empresa|contratada)[:\s]*([A-Z][A-Z\s.,&]+)',
@@ -108,43 +102,22 @@ def extrair_fornecedor(texto):
     return "Não identificado"
 
 def extrair_cnpj(texto):
-    """Extrai CNPJ"""
-    # Procura pelo CNPJ específico da PLIMA
-    cnpj_match = re.search(r'14\.125\.403/0001-71', texto)
-    if cnpj_match:
-        return cnpj_match.group()
-    
-    # Padrão genérico
+    """Extrai CNPJ no formato XX.XXX.XXX/XXXX-XX"""
     match = re.search(r'\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}', texto)
     return match.group() if match else "Não identificado"
 
 def extrair_processo(texto):
     """Extrai número do processo SEI"""
-    # Procura pelo processo específico
-    processo_match = re.search(r'SEI-150014/000178/2026', texto, re.IGNORECASE)
-    if processo_match:
-        return processo_match.group()
-    
-    # Padrão genérico
     match = re.search(r'SEI[-/\s]*(\d+[-/\s]*\d+[-/\s]*\d+)', texto, re.IGNORECASE)
     return match.group(1) if match else "Não identificado"
 
 def extrair_contrato(texto):
     """Extrai número do contrato"""
-    # Procura pelo contrato específico
-    contrato_match = re.search(r'009/2021', texto)
-    if contrato_match:
-        return contrato_match.group()
-    
     match = re.search(r'(?:contrato|processo)[:\s]*(\d+/\d{4})', texto, re.IGNORECASE)
     return match.group(1) if match else "Não identificado"
 
 def extrair_vigencia(texto):
     """Extrai data de vigência"""
-    vigencia_match = re.search(r'16/07/2021\s*a\s*15/07/2026', texto, re.IGNORECASE)
-    if vigencia_match:
-        return vigencia_match.group()
-    
     match = re.search(r'vig[êe]ncia[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
     if match:
         return match.group(1)
@@ -157,37 +130,17 @@ def extrair_vigencia(texto):
 
 def extrair_objeto(texto):
     """Extrai objeto do contrato"""
-    objeto_match = re.search(r'Prestação de Serviços de Guarda e Vigilância Armada', texto, re.IGNORECASE)
-    if objeto_match:
-        return objeto_match.group()
-    
     match = re.search(r'(?:objeto|descrição do serviço)[:\s]*([^\n]+)', texto, re.IGNORECASE)
     return match.group(1).strip() if match else "Não identificado"
 
 def extrair_gestores(texto):
     """Extrai nomes dos gestores e fiscais"""
-    # Gestores específicos do processo
-    gestor_match = re.search(r'Ana Marcia Rodrigues Santos Marcelino', texto, re.IGNORECASE)
-    fiscal1_match = re.search(r'Dimitri Conceição de Araújo', texto, re.IGNORECASE)
-    fiscal2_match = re.search(r'Samuel Sodré da Silva', texto, re.IGNORECASE)
-    
     gestores = []
-    if gestor_match:
-        gestores.append(f"Gestor: Ana Marcia Rodrigues Santos Marcelino")
-    if fiscal1_match:
-        gestores.append(f"Fiscal: Dimitri Conceição de Araújo")
-    if fiscal2_match:
-        gestores.append(f"Fiscal: Samuel Sodré da Silva")
     
-    if gestores:
-        return ", ".join(gestores)
-    
-    # Procura por gestor genérico
     gestor = re.search(r'(?:gestor)[:\s]*([A-Z][A-Z\s]+)', texto, re.IGNORECASE)
     if gestor:
         gestores.append(f"Gestor: {gestor.group(1).strip()}")
     
-    # Procura por fiscais genéricos
     fiscais = re.findall(r'(?:fiscal)[:\s]*([A-Z][A-Z\s]+)', texto, re.IGNORECASE)
     for fiscal in fiscais:
         if fiscal.strip() not in str(gestores):
@@ -197,70 +150,88 @@ def extrair_gestores(texto):
 
 def extrair_nota_fiscal(texto):
     """Extrai número da nota fiscal"""
-    nf_match = re.search(r'001', texto)
-    if nf_match and '03/02/2026' in texto:
-        return "001"
-    
     match = re.search(r'(?:nota fiscal|nf|nfs[ -]e)[:\s]*n[º°]?\s*(\d+)', texto, re.IGNORECASE)
     return match.group(1) if match else "Não identificado"
 
 def extrair_data_emissao_nf(texto):
     """Extrai data de emissão da nota fiscal"""
-    data_match = re.search(r'03/02/2026', texto)
-    if data_match:
-        return "03/02/2026"
+    # Tenta encontrar data no formato brasileiro
+    data_br = re.search(r'(\d{2}/\d{2}/\d{4})', texto)
+    if data_br:
+        return data_br.group(1)
     
-    match = re.search(r'(\d{2}/\d{2}/\d{4})', texto)
-    return match.group(1) if match else "Não identificado"
+    # Tenta encontrar data no formato ISO
+    data_iso = re.search(r'(\d{4}-\d{2}-\d{2})', texto)
+    if data_iso:
+        return data_iso.group(1)
+    
+    return "Não identificado"
 
-def extrair_valor(texto):
-    """Extrai valor total"""
-    valor_match = re.search(r'336\.790,39', texto)
-    if valor_match:
-        return "336.790,39"
+def extrair_valor_bruto(texto):
+    """Extrai valor bruto total"""
+    # Procura por valor próximo a "valor", "total", "R$"
+    padroes = [
+        r'valor[:\s]*R?\$?\s*([\d.,]+)',
+        r'total[:\s]*R?\$?\s*([\d.,]+)',
+        r'R?\$?\s*([\d.,]+)'
+    ]
     
-    match = re.search(r'valor[:\s]*R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
-    if match:
-        valor = match.group(1)
-        # Remove pontos de milhar e substitui vírgula decimal
-        if ',' in valor and '.' in valor:
-            valor = valor.replace('.', '').replace(',', '.')
-        elif ',' in valor:
-            valor = valor.replace(',', '.')
-        return valor
+    for padrao in padroes:
+        matches = re.findall(padrao, texto, re.IGNORECASE)
+        if matches:
+            # Pega o maior valor (provavelmente o total)
+            valores = []
+            for val in matches:
+                try:
+                    # Converte para float para comparação
+                    val_clean = val.replace('.', '').replace(',', '.')
+                    num = float(val_clean)
+                    valores.append((num, val))
+                except:
+                    continue
+            
+            if valores:
+                # Retorna o maior valor encontrado
+                maior = max(valores, key=lambda x: x[0])
+                return maior[1]
+    
     return "0,00"
+
+def extrair_valor_liquido(texto):
+    """Extrai valor líquido (após retenções)"""
+    padroes = [
+        r'valor líquido[:\s]*R?\$?\s*([\d.,]+)',
+        r'líquido[:\s]*R?\$?\s*([\d.,]+)',
+        r'valor a pagar[:\s]*R?\$?\s*([\d.,]+)'
+    ]
+    
+    for padrao in padroes:
+        match = re.search(padrao, texto, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    
+    return extrair_valor_bruto(texto)  # fallback
 
 def extrair_nota_empenho(texto):
     """Extrai número da nota de empenho"""
-    ne_match = re.search(r'2026NE00021', texto)
-    if ne_match:
-        return "2026NE00021"
-    
     match = re.search(r'\d{4}NE\d{5}', texto)
     return match.group() if match else "Não identificado"
 
 def extrair_nota_liquidacao(texto):
     """Extrai número da nota de liquidação"""
-    nl_match = re.search(r'2026NL00021', texto)
-    if nl_match:
-        return "2026NL00021"
-    
     match = re.search(r'\d{4}NL\d{5}', texto)
     return match.group() if match else "Não identificado"
 
-def extrair_data_liquidacao(texto):
+def extrair_data_liquidacao(texto, nl_numero):
     """Extrai data da liquidação"""
-    data_match = re.search(r'05/02/2026', texto)
-    if data_match:
-        return "05/02/2026"
+    if nl_numero != "Não identificado":
+        contexto = re.search(f'{nl_numero}.*?(\\d{{2}}/\\d{{2}}/\\d{{4}})', texto, re.DOTALL)
+        if contexto:
+            return contexto.group(1)
     return "Não identificado"
 
 def extrair_portaria(texto):
     """Extrai número da portaria"""
-    portaria_match = re.search(r'1329/2025', texto)
-    if portaria_match:
-        return "1329/2025"
-    
     match = re.search(r'(\d+/\d{4})', texto)
     return match.group(1) if match else "Não identificado"
 
@@ -269,21 +240,21 @@ def extrair_certidoes(texto):
     certidoes = {}
     
     # Certidão Federal
-    federal_match = re.search(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    certidoes['federal'] = federal_match.group(1) if federal_match else "03/08/2026"
+    federal_datas = re.findall(r'Valida\s*at[ée]\s*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    certidoes['federal'] = federal_datas[-1] if federal_datas else "Não identificado"
     
     # Certidão FGTS
-    fgts_match = re.search(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    if fgts_match:
-        certidoes['fgts_inicio'] = fgts_match.group(1)
-        certidoes['fgts_fim'] = fgts_match.group(2)
+    fgts_datas = re.findall(r'Validade[:\s]*(\d{2}/\d{2}/\d{4})[:\s]*a[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    if fgts_datas:
+        certidoes['fgts_inicio'] = fgts_datas[-1][0]
+        certidoes['fgts_fim'] = fgts_datas[-1][1]
     else:
-        certidoes['fgts_inicio'] = "23/01/2026"
-        certidoes['fgts_fim'] = "21/02/2026"
+        certidoes['fgts_inicio'] = "Não identificado"
+        certidoes['fgts_fim'] = "Não identificado"
     
     # Certidão Trabalhista
-    trab_match = re.search(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
-    certidoes['trabalhista'] = trab_match.group(1) if trab_match else "03/08/2026"
+    trab_datas = re.findall(r'válida até[:\s]*(\d{2}/\d{2}/\d{4})', texto, re.IGNORECASE)
+    certidoes['trabalhista'] = trab_datas[-1] if trab_datas else "Não identificado"
     
     return certidoes
 
@@ -293,90 +264,103 @@ def extrair_retencoes(texto):
     
     # INSS
     inss_match = re.search(r'INSS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
-    retencoes['inss'] = inss_match.group(1) if inss_match else "37.046,94"
+    retencoes['inss'] = inss_match.group(1) if inss_match else "0,00"
     
     # IRRF
     irrf_match = re.search(r'IRRF.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
-    retencoes['irrf'] = irrf_match.group(1) if irrf_match else "3.367,90"
+    retencoes['irrf'] = irrf_match.group(1) if irrf_match else "0,00"
+    
+    # PIS
+    pis_match = re.search(r'PIS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
+    retencoes['pis'] = pis_match.group(1) if pis_match else "0,00"
+    
+    # COFINS
+    cofins_match = re.search(r'COFINS.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
+    retencoes['cofins'] = cofins_match.group(1) if cofins_match else "0,00"
+    
+    # CSLL
+    csll_match = re.search(r'CSLL.*?R?\$?\s*([\d.,]+)', texto, re.IGNORECASE)
+    retencoes['csll'] = csll_match.group(1) if csll_match else "0,00"
     
     return retencoes
 
-# ============================================
-# FUNÇÕES DE EXTRAÇÃO DE SEIS
-# ============================================
-
-def extrair_seis_do_processo(texto):
+def extrair_todos_seis(texto):
     """
-    Extrai os números SEI específicos do processo
+    Extrai TODOS os números SEI (8-9 dígitos) do documento
+    Classifica por tipo de documento baseado em palavras-chave
     """
     seis = {}
     
-    # Despacho inicial
-    seis['despacho'] = ["124493612"]
+    # Encontrar todos os números de 8-9 dígitos
+    todos_seis = re.findall(r'\b(\d{8,9})\b', texto)
     
-    # Nota Fiscal
-    seis['nota_fiscal'] = ["124494291"]
+    # 1. SEI da Nota Fiscal
+    seis_nf = re.findall(r'(?:nota fiscal|nf).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['nota_fiscal'] = list(set(seis_nf)) if seis_nf else []
     
-    # Relação de funcionários
-    seis['relacao_funcionarios'] = ["124494923"]
+    # 2. SEI do Atestado / Relatório de Fiscalização
+    seis_atestado = re.findall(r'(?:atestado|realização dos serviços|relatório de fiscalização).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['atestado'] = list(set(seis_atestado)) if seis_atestado else []
     
-    # FGTS Digital / GFIP / Folha
-    seis['fgts_digital'] = ["124495289"]
+    # 3. SEI da Solicitação de Liquidação
+    seis_solicitacao = re.findall(r'(?:solicitação|liquidação).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['solicitacao'] = list(set(seis_solicitacao)) if seis_solicitacao else []
     
-    # Comprovante FGTS
-    seis['fgts'] = ["124495323"]
+    # 4. SEI da Certificação Contábil
+    seis_contabil = re.findall(r'(?:contabilidade|certificação).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['contabil'] = list(set(seis_contabil)) if seis_contabil else []
     
-    # Contracheques
-    seis['contracheques'] = ["124495373"]
+    # 5. SEI do Checklist / Auditoria
+    seis_checklist = re.findall(r'(?:checklist|auditoria).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['checklist'] = list(set(seis_checklist)) if seis_checklist else []
     
-    # Comprovante INSS
-    seis['inss'] = ["124495788"]
+    # 6. SEI da Autorização
+    seis_autorizacao = re.findall(r'(?:autoriza[çc][ãa]o|presid[eê]ncia).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['autorizacao'] = list(set(seis_autorizacao)) if seis_autorizacao else []
     
-    # Vale alimentação
-    seis['vale_alimentacao'] = ["124495431"]
+    # 7. SEI da Relação de Funcionários
+    seis_relacao = re.findall(r'(?:rela[çc][ãa]o.*?funcion[áa]rios|funcionários que executam).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['relacao_funcionarios'] = list(set(seis_relacao)) if seis_relacao else []
     
-    # Vale transporte
-    seis['vale_transporte'] = ["124498843"]
+    # 8. SEI do FGTS Digital / GFIP
+    seis_fgts_digital = re.findall(r'(?:fgts digital|gfip|relação de trabalhadores).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['fgts_digital'] = list(set(seis_fgts_digital)) if seis_fgts_digital else []
     
-    # Relatório de Fiscalização / Atestado
-    seis['atestado'] = ["124510613"]
+    # 9. SEI do Comprovante de FGTS
+    seis_fgts = re.findall(r'(?:comprovante.*?fgts|fgts.*?comprovante).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['fgts'] = list(set(seis_fgts)) if seis_fgts else []
     
-    # Solicitação de liquidação
-    seis['solicitacao'] = ["124518177"]
+    # 10. SEI dos Contracheques
+    seis_contracheques = re.findall(r'(?:contracheque|recibo de pagamento de sal[áa]rio).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['contracheques'] = list(set(seis_contracheques)) if seis_contracheques else []
     
-    # Despacho DIRAF
-    seis['diraf'] = ["124518390"]
+    # 11. SEI do Comprovante de INSS
+    seis_inss = re.findall(r'(?:inss|previdenci[áa]ria).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['inss'] = list(set(seis_inss)) if seis_inss else []
     
-    # Emissão de NL
-    seis['emissao_nl'] = ["124536905"]
+    # 12. SEI do Vale Transporte
+    seis_vt = re.findall(r'(?:vale.*?transporte|vt).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['vale_transporte'] = list(set(seis_vt)) if seis_vt else []
     
-    # Certificação Contábil
-    seis['contabil'] = ["124543482"]
+    # 13. SEI do Vale Alimentação
+    seis_va = re.findall(r'(?:vale.*?alimenta[çc][ãa]o|alimentação|cesta).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['vale_alimentacao'] = list(set(seis_va)) if seis_va else []
     
-    # Checklist da Auditoria
-    seis['checklist'] = ["124556218"]
+    # 14. SEI do Despacho Inicial
+    seis_despacho = re.findall(r'(?:despacho).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['despacho'] = list(set(seis_despacho)) if seis_despacho else []
     
-    # Encaminhamento AUDIT
-    seis['encaminhamento_audit'] = ["124557720"]
-    
-    # Encaminhamento DIRAF
-    seis['encaminhamento_diraf'] = ["124562123"]
-    
-    # Autorização Presidência
-    seis['autorizacao'] = ["124563107"]
-    
-    # Encaminhamento final
-    seis['encaminhamento_final'] = ["124573419"]
-    
-    # Regularização pagamento
-    seis['regularizacao'] = ["124746191"]
+    # 15. SEI do Encaminhamento DIRAF
+    seis_diraf = re.findall(r'(?:diraf|diretor administrativo).*?(\d{8,9})', texto, re.IGNORECASE | re.DOTALL)
+    seis['diraf'] = list(set(seis_diraf)) if seis_diraf else []
     
     return seis
 
 def verificar_mao_obra(texto):
     """Verifica se há indícios de mão-de-obra"""
-    palavras = ['vigilante', 'funcionario', 'empregado', 'folha de pagamento', 
-                'salário', 'vale transporte', 'cesta básica', 'contracheque']
+    palavras = ['mao de obra', 'terceirizado', 'funcionario', 'empregado', 'posto de trabalho',
+                'folha de pagamento', 'salário', 'vale transporte', 'cesta básica', 'recibo de pagamento',
+                'vigilante', 'auxiliar', 'copeiro', 'recepcionista']
     return any(palavra in texto.lower() for palavra in palavras)
 
 def verificar_validade(data_str):
@@ -388,6 +372,12 @@ def verificar_validade(data_str):
         return data < datetime.now(), data
     except:
         return False, None
+
+def formatar_observacao(seis_lista, prefixo="SEI", sufixo=""):
+    """Formata a observação com os SEIs encontrados"""
+    if seis_lista:
+        return f"{prefixo} {', '.join(seis_lista)} {sufixo}".strip()
+    return "Não localizado"
 
 # ============================================
 # FUNÇÃO PARA GERAR PDF
@@ -524,15 +514,17 @@ def gerar_pdf_final(dados, certidoes, retencoes, seis_docs, resultados, conclusa
     elements.append(Spacer(1, 0.2*cm))
     
     # Dados do processo
+    valor_liquido = extrair_valor_liquido(texto) if 'texto' in locals() else dados.get('valor', '0,00')
+    
     info_processo = [
         [Paragraph(f"<b>Fornecedor:</b> {dados['fornecedor'][:60]}", styles['InfoValue']),
          Paragraph(f"<b>CNPJ:</b> {dados['cnpj']}", styles['InfoValue'])],
         [Paragraph(f"<b>Contrato:</b> {dados['contrato']} | <b>Vigência:</b> {dados['vigencia']}", styles['InfoValue']),
          Paragraph(f"<b>NF:</b> {dados['nota_fiscal']} de {dados['data_nf']}", styles['InfoValue'])],
         [Paragraph(f"<b>Valor Bruto:</b> R$ {dados['valor']}", styles['InfoValue']),
-         Paragraph(f"<b>Valor Líquido:</b> R$ 296.375,55", styles['InfoValue'])],
-        [Paragraph(f"<b>Gestor:</b> Ana Marcia Rodrigues Santos Marcelino", styles['InfoValue']),
-         Paragraph(f"<b>Fiscais:</b> Dimitri Conceição de Araújo, Samuel Sodré da Silva", styles['InfoValue'])]
+         Paragraph(f"<b>Valor Líquido:</b> R$ {valor_liquido}", styles['InfoValue'])],
+        [Paragraph(f"<b>Gestor:</b> {dados['gestores'][:40]}", styles['InfoValue']),
+         Paragraph("", styles['InfoValue'])]
     ]
     
     tabela_info = Table(info_processo, colWidths=[10*cm, 7.5*cm])
@@ -601,12 +593,16 @@ def gerar_pdf_final(dados, certidoes, retencoes, seis_docs, resultados, conclusa
     # ========================================
     
     # Texto legal
-    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante no Relatório de Fiscalização, conforme o SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"<b>124510613</b>.", styles['TextoLegal']))
+    elements.append(Paragraph("Segue checklist, com o objetivo de conferência da documentação apresentada e continuidade do processo. A despesa está devidamente atestada pelo gestor e fiscais da área solicitante, conforme o SEI", styles['TextoLegal']))
+    
+    sei_atestado = seis_docs.get('atestado', ['Não identificado'])[0]
+    elements.append(Paragraph(f"<b>{sei_atestado}</b>.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.2*cm))
     
     elements.append(Paragraph("A conformidade da despesa, nota fiscal e a documentação anexa encontram-se regulares, conforme certificação da divisão de contabilidade SEI", styles['TextoLegal']))
-    elements.append(Paragraph(f"<b>124543482</b>.", styles['TextoLegal']))
+    
+    sei_contabil = seis_docs.get('contabil', ['Não identificado'])[0]
+    elements.append(Paragraph(f"<b>{sei_contabil}</b>.", styles['TextoLegal']))
     elements.append(Spacer(1, 0.3*cm))
     
     elements.append(Paragraph("1 - Cumpre destacar que esta checagem NÃO tem o papel de adentrar a seara do cumprimento das obrigações da contratada, no que tange às obrigações trabalhistas, previdenciárias e tributárias, inclusive pagamento das verbas salariais, vale transporte e auxílio alimentação, assim como a averiguação das Certidões de Regularidade (CRF, CND e CNDT), visto que são atribuições relacionadas aos Fiscais do Contrato conforme Decreto nº 45.600, de 16 de março de 2016.", styles['TextoLegal']))
@@ -683,7 +679,7 @@ if st.session_state.autenticado:
     uploaded_file = st.file_uploader("📤 Selecione o PDF do processo", type=['pdf'])
     
     if uploaded_file:
-        with st.spinner("🔍 Analisando documento e extraindo todos os números SEI..."):
+        with st.spinner("🔍 Analisando documento..."):
             texto = extrair_texto_pdf(uploaded_file)
             
             # Extrair dados básicos
@@ -697,10 +693,10 @@ if st.session_state.autenticado:
             dados['gestores'] = extrair_gestores(texto)
             dados['nota_fiscal'] = extrair_nota_fiscal(texto)
             dados['data_nf'] = extrair_data_emissao_nf(texto)
-            dados['valor'] = extrair_valor(texto)
+            dados['valor'] = extrair_valor_bruto(texto)
             dados['ne'] = extrair_nota_empenho(texto)
             dados['nl'] = extrair_nota_liquidacao(texto)
-            dados['data_nl'] = extrair_data_liquidacao(texto)
+            dados['data_nl'] = extrair_data_liquidacao(texto, dados['nl'])
             dados['portaria'] = extrair_portaria(texto)
             
             # Extrair certidões
@@ -709,8 +705,8 @@ if st.session_state.autenticado:
             # Extrair retenções
             retencoes = extrair_retencoes(texto)
             
-            # Extrair SEIs específicos do processo
-            seis_docs = extrair_seis_do_processo(texto)
+            # Extrair TODOS os números SEI classificados
+            seis_docs = extrair_todos_seis(texto)
             
             # Verificar mão-de-obra
             tem_mao_obra = verificar_mao_obra(texto)
@@ -735,9 +731,9 @@ if st.session_state.autenticado:
                 st.markdown("**Valor Bruto:**")
                 st.info(f"R$ {dados['valor']}")
                 st.markdown("**Valor Líquido:**")
-                st.info("R$ 296.375,55")
+                st.info(f"R$ {extrair_valor_liquido(texto)}")
                 st.markdown("**Gestor:**")
-                st.info("Ana Marcia Rodrigues Santos Marcelino")
+                st.info(dados['gestores'][:50] + "..." if len(dados['gestores']) > 50 else dados['gestores'])
             
             st.markdown("---")
             
@@ -759,71 +755,115 @@ if st.session_state.autenticado:
             data_atual = datetime.now()
             
             # Certidão Federal
-            cert_federal_obs = f"Certidão Federal válida até {certidoes['federal']}"
+            if certidoes['federal'] != "Não identificado":
+                federal_valida, _ = verificar_validade(certidoes['federal'])
+                cert_federal_obs = f"Certidão Federal válida até {certidoes['federal']}"
+            else:
+                cert_federal_obs = "Não identificado"
             
             # Certidão FGTS
-            cert_fgts_obs = f"CRF válido de {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}"
+            if certidoes['fgts_fim'] != "Não identificado":
+                fgts_valida, _ = verificar_validade(certidoes['fgts_fim'])
+                cert_fgts_obs = f"CRF válido de {certidoes['fgts_inicio']} a {certidoes['fgts_fim']}"
+            else:
+                cert_fgts_obs = "Não identificado"
             
             # Certidão Trabalhista
-            cert_trab_obs = f"Certidão Trabalhista válida até {certidoes['trabalhista']}"
+            if certidoes['trabalhista'] != "Não identificado":
+                trab_valida, _ = verificar_validade(certidoes['trabalhista'])
+                cert_trab_obs = f"Certidão Trabalhista válida até {certidoes['trabalhista']}"
+            else:
+                cert_trab_obs = "Não identificado"
             
-            # Montar resultados com os SEIs encontrados (ATUALIZADO - SEM ITEM 14)
+            # Montar resultados com os SEIs encontrados
             st.subheader("✅ CHECKLIST DE DOCUMENTAÇÃO")
             
+            # Construir string de retenções
+            retencoes_str = []
+            if retencoes.get('inss') and retencoes['inss'] != "0,00":
+                retencoes_str.append(f"INSS R$ {retencoes['inss']}")
+            if retencoes.get('irrf') and retencoes['irrf'] != "0,00":
+                retencoes_str.append(f"IRRF R$ {retencoes['irrf']}")
+            if retencoes.get('pis') and retencoes['pis'] != "0,00":
+                retencoes_str.append(f"PIS R$ {retencoes['pis']}")
+            if retencoes.get('cofins') and retencoes['cofins'] != "0,00":
+                retencoes_str.append(f"COFINS R$ {retencoes['cofins']}")
+            if retencoes.get('csll') and retencoes['csll'] != "0,00":
+                retencoes_str.append(f"CSLL R$ {retencoes['csll']}")
+            
+            retencoes_texto = "Há retenções (" + ", ".join(retencoes_str) + ")" if retencoes_str else "Não identificado"
+            
             resultados = [
-                {"item": 1, "descricao": checklist[0]["descricao"], "status": "S", 
-                 "observacao": "2026NE00021 (Gerando a 2026NL00021 de 05/02/2026)"},
+                {"item": 1, "descricao": checklist[0]["descricao"], 
+                 "status": "S" if dados['ne'] != "Não identificado" and dados['nl'] != "Não identificado" else "N",
+                 "observacao": f"{dados['ne']} (Gerando a {dados['nl']} de {dados['data_nl']})" if dados['ne'] != "Não identificado" and dados['nl'] != "Não identificado" else "Não localizado"},
                 
-                {"item": 2, "descricao": checklist[1]["descricao"], "status": "S", 
-                 "observacao": "SEI 124494291"},
+                {"item": 2, "descricao": checklist[1]["descricao"], 
+                 "status": "S" if seis_docs.get('nota_fiscal') else "N",
+                 "observacao": formatar_observacao(seis_docs.get('nota_fiscal', []), "SEI")},
                 
-                {"item": 3, "descricao": checklist[2]["descricao"], "status": "S", 
+                {"item": 3, "descricao": checklist[2]["descricao"], 
+                 "status": "S" if certidoes['federal'] != "Não identificado" else "N",
                  "observacao": cert_federal_obs},
                 
-                {"item": 4, "descricao": checklist[3]["descricao"], "status": "S", 
+                {"item": 4, "descricao": checklist[3]["descricao"], 
+                 "status": "S" if certidoes['fgts_fim'] != "Não identificado" else "N",
                  "observacao": cert_fgts_obs},
                 
-                {"item": 5, "descricao": checklist[4]["descricao"], "status": "S", 
+                {"item": 5, "descricao": checklist[4]["descricao"], 
+                 "status": "S" if certidoes['trabalhista'] != "Não identificado" else "N",
                  "observacao": cert_trab_obs},
                 
-                {"item": 6, "descricao": checklist[5]["descricao"], "status": "S", 
-                 "observacao": f"Há retenções (INSS R$ {retencoes['inss']} e IRRF R$ {retencoes['irrf']})"},
+                {"item": 6, "descricao": checklist[5]["descricao"], 
+                 "status": "S" if retencoes_str else "N",
+                 "observacao": retencoes_texto},
                 
-                {"item": 7, "descricao": checklist[6]["descricao"], "status": "NA", 
-                 "observacao": "Não se aplica"},
+                {"item": 7, "descricao": checklist[6]["descricao"], 
+                 "status": "NA", "observacao": "Não se aplica"},
                 
-                {"item": 8, "descricao": checklist[7]["descricao"], "status": "S", 
-                 "observacao": f"Portaria IPEM/GAPRE SEI N.º {dados['portaria']}"},
+                {"item": 8, "descricao": checklist[7]["descricao"], 
+                 "status": "S" if dados['portaria'] != "Não identificado" else "N",
+                 "observacao": f"Portaria IPEM/GAPRE N.º {dados['portaria']}" if dados['portaria'] != "Não identificado" else "Não localizado"},
                 
-                {"item": 9, "descricao": checklist[8]["descricao"], "status": "S", 
-                 "observacao": "SEI 124510613"},
+                {"item": 9, "descricao": checklist[8]["descricao"], 
+                 "status": "S" if seis_docs.get('atestado') else "N",
+                 "observacao": formatar_observacao(seis_docs.get('atestado', []), "SEI")},
                 
-                {"item": 10, "descricao": checklist[9]["descricao"], "status": "S", 
-                 "observacao": "SEI 124494923"},
+                {"item": 10, "descricao": checklist[9]["descricao"], 
+                 "status": "S" if seis_docs.get('relacao_funcionarios') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('relacao_funcionarios', []), "SEI") if seis_docs.get('relacao_funcionarios') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 11, "descricao": checklist[10]["descricao"], "status": "S",  # FGTS Digital
-                 "observacao": "SEI 124495289"},
+                {"item": 11, "descricao": checklist[10]["descricao"], 
+                 "status": "S" if seis_docs.get('fgts_digital') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('fgts_digital', []), "SEI") if seis_docs.get('fgts_digital') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 12, "descricao": checklist[11]["descricao"], "status": "S", 
-                 "observacao": "SEI 124495788"},
+                {"item": 12, "descricao": checklist[11]["descricao"], 
+                 "status": "S" if seis_docs.get('inss') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('inss', []), "SEI") if seis_docs.get('inss') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 13, "descricao": checklist[12]["descricao"], "status": "S", 
-                 "observacao": "SEI 124495323"},
+                {"item": 13, "descricao": checklist[12]["descricao"], 
+                 "status": "S" if seis_docs.get('fgts') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('fgts', []), "SEI") if seis_docs.get('fgts') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 14, "descricao": checklist[13]["descricao"], "status": "S",  # ANTIGO 15 - Folha
-                 "observacao": "SEI 124495289"},
+                {"item": 14, "descricao": checklist[13]["descricao"], 
+                 "status": "S" if seis_docs.get('fgts_digital') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('fgts_digital', []), "SEI") if seis_docs.get('fgts_digital') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 15, "descricao": checklist[14]["descricao"], "status": "S",  # ANTIGO 16 - Salários
-                 "observacao": "SEI 124495373"},
+                {"item": 15, "descricao": checklist[14]["descricao"], 
+                 "status": "S" if seis_docs.get('contracheques') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('contracheques', []), "SEI") if seis_docs.get('contracheques') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 16, "descricao": checklist[15]["descricao"], "status": "S",  # ANTIGO 17 - VT
-                 "observacao": "SEI 124498843"},
+                {"item": 16, "descricao": checklist[15]["descricao"], 
+                 "status": "S" if seis_docs.get('vale_transporte') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('vale_transporte', []), "SEI") if seis_docs.get('vale_transporte') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 17, "descricao": checklist[16]["descricao"], "status": "S",  # ANTIGO 18 - VA
-                 "observacao": "SEI 124495431"},
+                {"item": 17, "descricao": checklist[16]["descricao"], 
+                 "status": "S" if seis_docs.get('vale_alimentacao') else "NA" if not tem_mao_obra else "N",
+                 "observacao": formatar_observacao(seis_docs.get('vale_alimentacao', []), "SEI") if seis_docs.get('vale_alimentacao') else ("Sem mão-de-obra" if not tem_mao_obra else "Não localizado")},
                 
-                {"item": 18, "descricao": checklist[17]["descricao"], "status": "NA",  # ANTIGO 19 - Rescisão
-                 "observacao": "Sem rescisão no período"}
+                {"item": 18, "descricao": checklist[17]["descricao"], 
+                 "status": "NA" if not tem_mao_obra else "N",
+                 "observacao": "Sem rescisão no período" if not tem_mao_obra else "Não localizado"}
             ]
             
             # Mostrar resultados na tela
@@ -869,13 +909,11 @@ if st.session_state.autenticado:
                 exigencia_texto = st.text_area("✏️ Descreva a(s) exigência(s):", height=80)
                 conclusao = exigencia_texto
             else:
-                conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI 124543482"
+                sei_contabil = seis_docs.get('contabil', ['Não identificado'])[0]
+                conclusao = f"Nada tem a opor quanto ao prosseguimento, com fulcro no art. 62, da Lei 4.320, de 17/03/1964 e com a análise procedida da Nota Fiscal e documentação apresentada pela empresa sendo atestada e certificada sua regularidade através da liquidação de despesa pela Divisão de Contabilidade Documento SEI {sei_contabil}"
             
             tem_observacao = st.radio("📝 Existe alguma observação a fazer?", ["Não", "Sim"], horizontal=True)
             observacao_texto = st.text_area("✏️ Descreva a(s) observação(ões):", height=80) if tem_observacao == "Sim" else ""
-            
-            if not observacao_texto:
-                observacao_texto = "Despesa referente a Janeiro/2026."
             
             # Botão para gerar PDF
             st.markdown("---")
@@ -898,4 +936,4 @@ else:
     st.warning("🔐 Faça login no menu lateral para acessar o sistema")
 
 st.markdown("---")
-st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v15.0 - Atualizado | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+st.caption(f"IPEM-RJ - Auditoria Interna | Sistema de Análise Automática v16.0 - Genérico | {datetime.now().strftime('%d/%m/%Y %H:%M')}")
